@@ -2,7 +2,7 @@
   "name": "markdown-toolkit",
   "displayName": "Markdown Toolkit",
   "description": "Open Markdown preview in-place, replacing the source editor tab.",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "publisher": "zhouyuyang",
   "license": "MIT",
   "engines": {
@@ -18,7 +18,8 @@
     "productivity"
   ],
   "activationEvents": [
-    "onCommand:markdownToolkit.openPreviewInPlace"
+    "onCommand:markdownToolkit.openPreviewInPlace",
+    "onCommand:markdownToolkit.exitPreviewInPlace"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -28,6 +29,12 @@
         "title": "Open Markdown Preview (In Place)",
         "category": "Markdown Toolkit",
         "icon": "$(book)"
+      },
+      {
+        "command": "markdownToolkit.exitPreviewInPlace",
+        "title": "Exit Markdown Preview (In Place)",
+        "category": "Markdown Toolkit",
+        "icon": "$(close)"
       }
     ],
     "menus": {
@@ -36,6 +43,11 @@
           "command": "markdownToolkit.openPreviewInPlace",
           "group": "navigation@10",
           "when": "resourceLangId == markdown"
+        },
+        {
+          "command": "markdownToolkit.exitPreviewInPlace",
+          "group": "navigation@11",
+          "when": "activeCustomEditorId == vscode.markdown.preview.editor"
         }
       ],
       "editor/context": [
@@ -43,6 +55,18 @@
           "command": "markdownToolkit.openPreviewInPlace",
           "group": "navigation@10",
           "when": "resourceLangId == markdown"
+        },
+        {
+          "command": "markdownToolkit.exitPreviewInPlace",
+          "group": "navigation@11",
+          "when": "activeCustomEditorId == vscode.markdown.preview.editor"
+        }
+      ],
+      "webview/context": [
+        {
+          "command": "markdownToolkit.exitPreviewInPlace",
+          "group": "navigation@11",
+          "when": "webviewId == markdown.preview || activeCustomEditorId == vscode.markdown.preview.editor"
         }
       ]
     },
@@ -53,7 +77,10 @@
         "command": "markdownToolkit.openPreviewInPlace",
         "when": "editorTextFocus && resourceLangId == markdown"
       }
-    ]
+    ],
+    "configurationDefaults": {
+      "markdown.preview.doubleClickToSwitchToEditor": false
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
