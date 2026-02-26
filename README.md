@@ -36,6 +36,8 @@ so double-click in preview no longer exits reading mode.
 - Interactive controls are added on each Mermaid diagram:
   - `+` / `-` buttons to zoom.
   - `Reset` button to restore default zoom and position.
+  - `Focus` button and double-click in the diagram to enter immersive focus mode.
+  - In focus mode, press `Esc` or double-click again to exit.
   - Drag to pan the diagram.
   - `Ctrl`/`Cmd` + mouse wheel to zoom around the cursor position.
 

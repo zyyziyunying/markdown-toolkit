@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.0.5
+
+- Add immersive Mermaid focus mode (double-click or toolbar button) to maximize diagram viewing area.
+- Add focus mode exit shortcuts: `Esc` or double-click the diagram again.
+- Auto-fit diagram to viewport when entering focus mode.
+
 ## 0.0.4
 
 - Add Mermaid rendering support for fenced `mermaid` code blocks in Markdown preview.

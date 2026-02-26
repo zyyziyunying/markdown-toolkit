@@ -1,6 +1,8 @@
 (() => {
   const MERMAID_SELECTOR = "pre > code.language-mermaid";
   const PROCESSED_ATTR = "data-markdown-toolkit-mermaid-processed";
+  const BODY_FOCUS_CLASS = "markdown-toolkit-mermaid-focus-active";
+  const WRAPPER_FOCUS_CLASS = "is-focus-mode";
   const SCALE_MIN = 0.25;
   const SCALE_MAX = 4;
   const SCALE_STEP = 1.2;
@@ -8,6 +10,7 @@
   let mermaidReady = false;
   let diagramId = 0;
   let isScheduled = false;
+  let activeFocusState = null;
 
   function ensureMermaid() {
     if (mermaidReady) {
@@ -105,6 +108,151 @@
     return button;
   }
 
+  function resetViewport(state, viewport) {
+    state.scale = 1;
+    updateScale(state);
+    viewport.scrollLeft = 0;
+    viewport.scrollTop = 0;
+  }
+
+  function fitViewport(state, viewport) {
+    const availableWidth = Math.max(1, viewport.clientWidth - 24);
+    const availableHeight = Math.max(1, viewport.clientHeight - 24);
+    const fitScale = clamp(Math.min(availableWidth / state.baseWidth, availableHeight / state.baseHeight), SCALE_MIN, SCALE_MAX);
+
+    state.scale = fitScale;
+    updateScale(state);
+
+    const scaledWidth = state.baseWidth * state.scale;
+    const scaledHeight = state.baseHeight * state.scale;
+    viewport.scrollLeft = Math.max(0, (scaledWidth - viewport.clientWidth) / 2);
+    viewport.scrollTop = Math.max(0, (scaledHeight - viewport.clientHeight) / 2);
+  }
+
+  function setFocusButtonState(state, isFocused) {
+    state.focusButton.textContent = isFocused ? "Exit Focus" : "Focus";
+    state.focusButton.title = isFocused
+      ? "Exit focus mode (Esc)"
+      : "Enter focus mode";
+  }
+
+  function exitFocusMode() {
+    if (!activeFocusState) {
+      return;
+    }
+
+    const {
+      state,
+      wrapper,
+      overlay,
+      sourceParent,
+      sourceNextSibling,
+      onKeyDown,
+      onResize,
+      onOverlayClick,
+    } = activeFocusState;
+
+    window.removeEventListener("keydown", onKeyDown, true);
+    window.removeEventListener("resize", onResize);
+    overlay.removeEventListener("click", onOverlayClick);
+
+    document.body.classList.remove(BODY_FOCUS_CLASS);
+    wrapper.classList.remove(WRAPPER_FOCUS_CLASS);
+    setFocusButtonState(state, false);
+
+    if (sourceParent && sourceParent.isConnected) {
+      if (sourceNextSibling && sourceNextSibling.parentNode === sourceParent) {
+        sourceParent.insertBefore(wrapper, sourceNextSibling);
+      } else {
+        sourceParent.appendChild(wrapper);
+      }
+    }
+
+    overlay.remove();
+    activeFocusState = null;
+  }
+
+  function enterFocusMode(state, wrapper, viewport) {
+    if (activeFocusState) {
+      if (activeFocusState.wrapper === wrapper) {
+        return;
+      }
+      exitFocusMode();
+    }
+
+    if (!wrapper.parentNode) {
+      return;
+    }
+
+    const sourceParent = wrapper.parentNode;
+    const sourceNextSibling = wrapper.nextSibling;
+    const overlay = document.createElement("div");
+    overlay.className = "markdown-toolkit-mermaid-focus-overlay";
+
+    const hint = document.createElement("div");
+    hint.className = "markdown-toolkit-mermaid-focus-hint";
+    hint.textContent = "Double-click or press Esc to exit focus mode";
+    overlay.append(hint);
+
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        exitFocusMode();
+      }
+    };
+
+    const onResize = () => {
+      if (!activeFocusState || activeFocusState.wrapper !== wrapper) {
+        return;
+      }
+      fitViewport(state, viewport);
+    };
+
+    const onOverlayClick = (event) => {
+      if (event.target === overlay) {
+        exitFocusMode();
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown, true);
+    window.addEventListener("resize", onResize);
+    overlay.addEventListener("click", onOverlayClick);
+
+    document.body.classList.add(BODY_FOCUS_CLASS);
+    wrapper.classList.add(WRAPPER_FOCUS_CLASS);
+    setFocusButtonState(state, true);
+
+    document.body.append(overlay);
+    overlay.append(wrapper);
+
+    activeFocusState = {
+      state,
+      wrapper,
+      overlay,
+      sourceParent,
+      sourceNextSibling,
+      onKeyDown,
+      onResize,
+      onOverlayClick,
+    };
+
+    window.requestAnimationFrame(() => {
+      if (!activeFocusState || activeFocusState.wrapper !== wrapper) {
+        return;
+      }
+      fitViewport(state, viewport);
+    });
+  }
+
+  function toggleFocusMode(state, wrapper, viewport) {
+    if (activeFocusState && activeFocusState.wrapper === wrapper) {
+      exitFocusMode();
+      return;
+    }
+
+    enterFocusMode(state, wrapper, viewport);
+  }
+
   function attachInteraction(wrapper, viewport, svg) {
     const { baseWidth, baseHeight } = resolveSvgSize(svg);
 
@@ -117,6 +265,7 @@
       scale: 1,
       svg,
       scaleLabel: document.createElement("span"),
+      focusButton: document.createElement("button"),
     };
 
     state.scaleLabel.className = "markdown-toolkit-mermaid-scale";
@@ -128,13 +277,14 @@
       setScale(state, viewport, state.scale * SCALE_STEP, viewport.clientWidth / 2, viewport.clientHeight / 2);
     });
     const resetButton = createButton("Reset", "Reset zoom and position", () => {
-      state.scale = 1;
-      updateScale(state);
-      viewport.scrollLeft = 0;
-      viewport.scrollTop = 0;
+      resetViewport(state, viewport);
     });
+    state.focusButton = createButton("Focus", "Enter focus mode", () => {
+      toggleFocusMode(state, wrapper, viewport);
+    });
+    state.focusButton.classList.add("markdown-toolkit-mermaid-focus-button");
 
-    toolbar.append(minusButton, plusButton, state.scaleLabel, resetButton);
+    toolbar.append(minusButton, plusButton, state.scaleLabel, resetButton, state.focusButton);
     wrapper.prepend(toolbar);
 
     updateScale(state);
@@ -211,6 +361,11 @@
       if (dragging && event.pointerId === dragging.pointerId && !(event.buttons & 1)) {
         stopDragging(event);
       }
+    });
+
+    viewport.addEventListener("dblclick", (event) => {
+      event.preventDefault();
+      toggleFocusMode(state, wrapper, viewport);
     });
   }
 
@@ -306,6 +461,10 @@
   function scheduleRender() {
     if (isScheduled) {
       return;
+    }
+
+    if (activeFocusState) {
+      exitFocusMode();
     }
 
     isScheduled = true;

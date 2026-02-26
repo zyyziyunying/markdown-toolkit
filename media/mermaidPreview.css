@@ -29,6 +29,10 @@
   background: var(--vscode-button-secondaryHoverBackground, rgba(127, 127, 127, 0.25));
 }
 
+.markdown-toolkit-mermaid-focus-button {
+  margin-left: auto;
+}
+
 .markdown-toolkit-mermaid-scale {
   min-width: 42px;
   text-align: center;
@@ -62,4 +66,48 @@
   margin: 0.75em 0;
   color: var(--vscode-errorForeground);
   font-size: 12px;
+}
+
+body.markdown-toolkit-mermaid-focus-active {
+  overflow: hidden;
+}
+
+.markdown-toolkit-mermaid-focus-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483646;
+  padding: 12px;
+  box-sizing: border-box;
+  background: var(--vscode-editor-background);
+}
+
+.markdown-toolkit-mermaid-focus-hint {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  z-index: 1;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--vscode-panel-border, rgba(127, 127, 127, 0.35));
+  background: var(--vscode-editor-inactiveSelectionBackground, rgba(127, 127, 127, 0.1));
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground, var(--vscode-editor-foreground));
+}
+
+.markdown-toolkit-mermaid-focus-overlay .markdown-toolkit-mermaid {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+
+.markdown-toolkit-mermaid.is-focus-mode {
+  border-radius: 10px;
+  box-shadow: 0 0 0 1px var(--vscode-panel-border, rgba(127, 127, 127, 0.35));
+}
+
+.markdown-toolkit-mermaid.is-focus-mode .markdown-toolkit-mermaid-viewport {
+  flex: 1 1 auto;
+  max-height: none;
 }

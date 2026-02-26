@@ -2,7 +2,7 @@
   "name": "markdown-toolkit",
   "displayName": "Markdown Toolkit",
   "description": "Open Markdown preview in-place with Mermaid rendering and pan/zoom.",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "publisher": "zhouyuyang",
   "license": "MIT",
   "engines": {
