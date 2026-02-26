@@ -68,7 +68,7 @@
         {
           "command": "markdownToolkit.exitPreviewInPlace",
           "group": "navigation@11",
-          "when": "webviewId == markdown.preview || activeCustomEditorId == vscode.markdown.preview.editor"
+          "when": "activeCustomEditorId == vscode.markdown.preview.editor"
         }
       ]
     },
