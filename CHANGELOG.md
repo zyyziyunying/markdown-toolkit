@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.0.4
+
+- Add Mermaid rendering support for fenced `mermaid` code blocks in Markdown preview.
+- Add diagram interaction tools: zoom buttons, reset, drag-to-pan, and Ctrl/Cmd + wheel zoom.
+- Add bundled Mermaid runtime plus dedicated preview script/style assets.
+
 ## 0.0.3
 
 - Add explicit exit command for Markdown preview in place.

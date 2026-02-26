@@ -10,6 +10,8 @@ VS Code's default Markdown preview action usually keeps the source editor tab op
 This extension provides an "in-place" preview command that replaces the current
 Markdown editor tab with a preview editor in the same view column.
 
+It also adds Mermaid rendering in Markdown preview with built-in interaction tools.
+
 ## Command
 
 - `Markdown Toolkit: Open Markdown Preview (In Place)` (`markdownToolkit.openPreviewInPlace`)
@@ -28,9 +30,21 @@ Markdown editor tab with a preview editor in the same view column.
 The extension sets `markdown.preview.doubleClickToSwitchToEditor` to `false` by default,
 so double-click in preview no longer exits reading mode.
 
+## Mermaid support
+
+- Fenced code blocks with language `mermaid` are rendered as diagrams in Markdown preview.
+- Interactive controls are added on each Mermaid diagram:
+  - `+` / `-` buttons to zoom.
+  - `Reset` button to restore default zoom and position.
+  - Drag to pan the diagram.
+  - `Ctrl`/`Cmd` + mouse wheel to zoom around the cursor position.
+
 ## Project structure
 
 - `src/extension.ts`: preview-in-place command implementation
+- `media/mermaid.min.js`: bundled Mermaid runtime for preview
+- `media/mermaidPreview.js`: Mermaid rendering + zoom/pan behavior in preview
+- `media/mermaidPreview.css`: Mermaid preview UI styles
 - `package.json`: VS Code contribution and build configuration
 - `tsconfig.json`: TypeScript compiler options
 

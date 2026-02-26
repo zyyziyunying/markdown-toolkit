@@ -9,6 +9,8 @@ English README: [`README.md`](README.md)
 VS Code 默认的 Markdown 预览通常会保留源码编辑器标签页。  
 本扩展提供“原位预览”命令，会在同一分栏中用预览编辑器替换当前 Markdown 标签页。
 
+同时，它还为 Markdown 预览增加了 Mermaid 渲染和图表交互能力。
+
 ## 命令
 
 - `Markdown Toolkit: Open Markdown Preview (In Place)`（`markdownToolkit.openPreviewInPlace`）
@@ -27,9 +29,21 @@ VS Code 默认的 Markdown 预览通常会保留源码编辑器标签页。
 扩展默认将 `markdown.preview.doubleClickToSwitchToEditor` 设为 `false`，  
 即在预览中双击不再自动退出阅读模式。
 
+## Mermaid 支持
+
+- 语言标识为 `mermaid` 的围栏代码块会在 Markdown 预览中直接渲染为图表。
+- 每个 Mermaid 图表都带有交互工具：
+  - `+` / `-` 按钮可缩放。
+  - `Reset` 按钮可恢复默认缩放和位置。
+  - 鼠标左键拖拽可平移画布。
+  - `Ctrl`/`Cmd` + 鼠标滚轮可按光标位置缩放。
+
 ## 项目结构
 
 - `src/extension.ts`：原位预览与退出命令实现
+- `media/mermaid.min.js`：内置 Mermaid 运行时脚本
+- `media/mermaidPreview.js`：Mermaid 渲染与缩放/平移交互
+- `media/mermaidPreview.css`：Mermaid 预览样式
 - `package.json`：VS Code 贡献点与构建配置
 - `tsconfig.json`：TypeScript 编译配置
 

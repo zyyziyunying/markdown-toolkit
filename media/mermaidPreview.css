@@ -1,0 +1,65 @@
+.markdown-toolkit-mermaid {
+  margin: 1em 0;
+  border: 1px solid var(--vscode-panel-border, rgba(127, 127, 127, 0.35));
+  border-radius: 8px;
+  background: var(--vscode-editor-background);
+}
+
+.markdown-toolkit-mermaid-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--vscode-panel-border, rgba(127, 127, 127, 0.35));
+  background: var(--vscode-editor-inactiveSelectionBackground, rgba(127, 127, 127, 0.08));
+  font-size: 12px;
+}
+
+.markdown-toolkit-mermaid-button {
+  border: 1px solid var(--vscode-button-border, transparent);
+  border-radius: 4px;
+  background: var(--vscode-button-secondaryBackground, transparent);
+  color: var(--vscode-button-secondaryForeground, var(--vscode-editor-foreground));
+  padding: 2px 8px;
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+.markdown-toolkit-mermaid-button:hover {
+  background: var(--vscode-button-secondaryHoverBackground, rgba(127, 127, 127, 0.25));
+}
+
+.markdown-toolkit-mermaid-scale {
+  min-width: 42px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.markdown-toolkit-mermaid-viewport {
+  overflow: auto;
+  max-height: 70vh;
+  padding: 12px;
+  cursor: grab;
+  touch-action: none;
+}
+
+.markdown-toolkit-mermaid-viewport.is-dragging {
+  cursor: grabbing;
+}
+
+.markdown-toolkit-mermaid-stage {
+  display: inline-block;
+  min-width: max-content;
+  min-height: max-content;
+}
+
+.markdown-toolkit-mermaid-stage svg {
+  display: block;
+  user-select: none;
+}
+
+.markdown-toolkit-mermaid-error {
+  margin: 0.75em 0;
+  color: var(--vscode-errorForeground);
+  font-size: 12px;
+}

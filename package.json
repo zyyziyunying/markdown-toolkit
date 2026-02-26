@@ -1,8 +1,8 @@
 {
   "name": "markdown-toolkit",
   "displayName": "Markdown Toolkit",
-  "description": "Open Markdown preview in-place, replacing the source editor tab.",
-  "version": "0.0.3",
+  "description": "Open Markdown preview in-place with Mermaid rendering and pan/zoom.",
+  "version": "0.0.4",
   "publisher": "zhouyuyang",
   "license": "MIT",
   "engines": {
@@ -14,6 +14,8 @@
   "keywords": [
     "markdown",
     "preview",
+    "mermaid",
+    "diagram",
     "editor",
     "productivity"
   ],
@@ -77,6 +79,13 @@
         "command": "markdownToolkit.openPreviewInPlace",
         "when": "editorTextFocus && resourceLangId == markdown"
       }
+    ],
+    "markdown.previewScripts": [
+      "./media/mermaid.min.js",
+      "./media/mermaidPreview.js"
+    ],
+    "markdown.previewStyles": [
+      "./media/mermaidPreview.css"
     ],
     "configurationDefaults": {
       "markdown.preview.doubleClickToSwitchToEditor": false
