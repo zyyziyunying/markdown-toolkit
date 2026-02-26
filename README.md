@@ -35,7 +35,8 @@ so double-click in preview no longer exits reading mode.
 - Fenced code blocks with language `mermaid` are rendered as diagrams in Markdown preview.
 - Long Mermaid labels are safer by default:
   - Increased Mermaid `maxTextSize` to reduce render failures on large diagrams.
-  - Enable label/source wrapping to avoid clipped tail text in long node labels.
+  - Enable label wrapping with node box height sync to prevent wrapped text overflow.
+  - Wrap Mermaid source fallback blocks on render error for better readability.
 - Interactive controls are added on each Mermaid diagram:
   - `+` / `-` buttons to zoom.
   - `Reset` button to restore default zoom and position.

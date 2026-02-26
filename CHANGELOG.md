@@ -3,7 +3,7 @@
 ## Unreleased
 
 - Improve Mermaid long-text stability by increasing `maxTextSize`.
-- Improve Mermaid label wrapping to reduce clipped tail text on long node labels.
+- Fix Mermaid long-label wrapping layout so node box height grows with wrapped text.
 - Wrap Mermaid source fallback blocks on render error for better readability.
 - Add VS Code debug launch/task presets (`Run Extension` / `Watch + Run Extension`).
 

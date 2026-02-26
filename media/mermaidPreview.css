@@ -62,6 +62,9 @@
   user-select: none;
 }
 
+svg[id^="markdown-toolkit-mermaid-"] .label,
+svg[id^="markdown-toolkit-mermaid-"] .nodeLabel,
+svg[id^="markdown-toolkit-mermaid-"] foreignObject div,
 .markdown-toolkit-mermaid-stage .label,
 .markdown-toolkit-mermaid-stage .nodeLabel,
 .markdown-toolkit-mermaid-stage foreignObject div {
@@ -70,10 +73,12 @@
   word-break: break-word;
 }
 
+svg[id^="markdown-toolkit-mermaid-"] foreignObject,
 .markdown-toolkit-mermaid-stage foreignObject {
   overflow: visible;
 }
 
+svg[id^="markdown-toolkit-mermaid-"] foreignObject > div,
 .markdown-toolkit-mermaid-stage foreignObject > div {
   display: block !important;
   width: 100%;
