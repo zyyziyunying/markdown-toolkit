@@ -6,6 +6,8 @@
   const SCALE_MIN = 0.25;
   const SCALE_MAX = 4;
   const SCALE_STEP = 1.2;
+  const MAX_TEXT_SIZE = 200000;
+  const FLOWCHART_WRAPPING_WIDTH = 360;
 
   let mermaidReady = false;
   let diagramId = 0;
@@ -25,6 +27,12 @@
       startOnLoad: false,
       securityLevel: "strict",
       theme: "default",
+      maxTextSize: MAX_TEXT_SIZE,
+      markdownAutoWrap: true,
+      flowchart: {
+        htmlLabels: true,
+        wrappingWidth: FLOWCHART_WRAPPING_WIDTH,
+      },
     });
 
     mermaidReady = true;
@@ -398,6 +406,14 @@
     return error;
   }
 
+  function enableMermaidSourceWrap(preElement) {
+    preElement.classList.add("markdown-toolkit-mermaid-source");
+    const codeElement = preElement.querySelector("code");
+    if (codeElement) {
+      codeElement.classList.add("markdown-toolkit-mermaid-source-code");
+    }
+  }
+
   async function renderMermaidPre(preElement, source) {
     try {
       const renderId = `markdown-toolkit-mermaid-${diagramId++}`;
@@ -428,6 +444,7 @@
       const message = error instanceof Error ? error.message : String(error);
       const errorBlock = createErrorBlock(`Mermaid render failed: ${message}`);
       if (preElement.isConnected) {
+        enableMermaidSourceWrap(preElement);
         preElement.insertAdjacentElement("afterend", errorBlock);
       }
     }

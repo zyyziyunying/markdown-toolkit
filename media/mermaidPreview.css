@@ -62,6 +62,32 @@
   user-select: none;
 }
 
+.markdown-toolkit-mermaid-stage .label,
+.markdown-toolkit-mermaid-stage .nodeLabel,
+.markdown-toolkit-mermaid-stage foreignObject div {
+  white-space: normal !important;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.markdown-toolkit-mermaid-stage foreignObject {
+  overflow: visible;
+}
+
+.markdown-toolkit-mermaid-stage foreignObject > div {
+  display: block !important;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: visible;
+}
+
+pre.markdown-toolkit-mermaid-source,
+pre.markdown-toolkit-mermaid-source > code.markdown-toolkit-mermaid-source-code {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
 .markdown-toolkit-mermaid-error {
   margin: 0.75em 0;
   color: var(--vscode-errorForeground);

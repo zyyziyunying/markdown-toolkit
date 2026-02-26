@@ -33,6 +33,9 @@ so double-click in preview no longer exits reading mode.
 ## Mermaid support
 
 - Fenced code blocks with language `mermaid` are rendered as diagrams in Markdown preview.
+- Long Mermaid labels are safer by default:
+  - Increased Mermaid `maxTextSize` to reduce render failures on large diagrams.
+  - Enable label/source wrapping to avoid clipped tail text in long node labels.
 - Interactive controls are added on each Mermaid diagram:
   - `+` / `-` buttons to zoom.
   - `Reset` button to restore default zoom and position.
@@ -47,6 +50,8 @@ so double-click in preview no longer exits reading mode.
 - `media/mermaid.min.js`: bundled Mermaid runtime for preview
 - `media/mermaidPreview.js`: Mermaid rendering + zoom/pan behavior in preview
 - `media/mermaidPreview.css`: Mermaid preview UI styles
+- `.vscode/launch.json`: extension debug launch presets
+- `.vscode/tasks.json`: compile/watch tasks used by debug presets
 - `package.json`: VS Code contribution and build configuration
 - `tsconfig.json`: TypeScript compiler options
 
@@ -58,3 +63,10 @@ npm run compile
 ```
 
 Press `F5` in VS Code to launch an Extension Development Host.
+
+Preconfigured launch options:
+
+- `Run Extension`: compile once, then launch.
+- `Watch + Run Extension`: start `tsc --watch`, then launch.
+
+Both debug profiles use `--disable-extensions` to reduce noise from unrelated extension logs.

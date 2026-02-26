@@ -32,6 +32,9 @@ VS Code 默认的 Markdown 预览通常会保留源码编辑器标签页。
 ## Mermaid 支持
 
 - 语言标识为 `mermaid` 的围栏代码块会在 Markdown 预览中直接渲染为图表。
+- 针对长文本做了默认兜底：
+  - 提高 Mermaid `maxTextSize`，降低大图/长文本渲染失败概率。
+  - 节点标签与源码回退区域支持自动换行，减少尾部文字被截断。
 - 每个 Mermaid 图表都带有交互工具：
   - `+` / `-` 按钮可缩放。
   - `Reset` 按钮可恢复默认缩放和位置。
@@ -46,6 +49,8 @@ VS Code 默认的 Markdown 预览通常会保留源码编辑器标签页。
 - `media/mermaid.min.js`：内置 Mermaid 运行时脚本
 - `media/mermaidPreview.js`：Mermaid 渲染与缩放/平移交互
 - `media/mermaidPreview.css`：Mermaid 预览样式
+- `.vscode/launch.json`：扩展调试启动配置
+- `.vscode/tasks.json`：调试使用的编译/监听任务
 - `package.json`：VS Code 贡献点与构建配置
 - `tsconfig.json`：TypeScript 编译配置
 
@@ -57,3 +62,10 @@ npm run compile
 ```
 
 在 VS Code 中按 `F5` 启动 Extension Development Host。
+
+已预置两套调试配置：
+
+- `Run Extension`：先编译一次再启动。
+- `Watch + Run Extension`：先启动 `tsc --watch` 再启动。
+
+两套调试配置都启用了 `--disable-extensions`，用于减少其他扩展日志干扰。
