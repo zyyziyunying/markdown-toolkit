@@ -2,8 +2,12 @@
 
 ## Unreleased
 
+## 1.0.1 - 2026-02-27
+
 - Add `Open Floating Markdown Preview` command to detach preview into a new VS Code window.
 - Add floating-preview shortcut: `Ctrl+Alt+Shift+M` (`Cmd+Alt+Shift+M` on macOS).
+- Add floating command icon and compact title for cleaner editor title actions.
+- Hide floating/exit actions in auxiliary windows to avoid redundant nested actions.
 
 ## 1.0.0 - 2026-02-27
 
