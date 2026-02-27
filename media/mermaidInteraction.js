@@ -1,7 +1,7 @@
 (() => {
   const mermaidToolkit = (window.MarkdownToolkitMermaid = window.MarkdownToolkitMermaid || {});
   const MERMAID_VIEWPORT_SELECTOR = ".markdown-toolkit-mermaid-viewport";
-  const SCALE_MIN = 0.25;
+  const SCALE_MIN = 0.01;
   const SCALE_MAX = 4;
   const SCALE_STEP = 1.2;
   const DRAG_THRESHOLD_PX = 4;
