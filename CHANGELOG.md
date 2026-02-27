@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Add `Open Floating Markdown Preview` command to detach preview into a new VS Code window.
+- Add floating-preview shortcut: `Ctrl+Alt+Shift+M` (`Cmd+Alt+Shift+M` on macOS).
+
 ## 1.0.0 - 2026-02-27
 
 - Improve Mermaid long-text stability by increasing `maxTextSize`.

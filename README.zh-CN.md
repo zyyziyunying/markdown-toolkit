@@ -1,8 +1,8 @@
 # Markdown Toolkit（简体中文）
 
-一个用于 VS Code 的扩展，可将 Markdown 预览在当前标签页原位打开。
+一个用于 VS Code 的扩展，可将 Markdown 预览原位打开，或一键浮动到独立窗口。
 
-English README: [`README.md`](README.md)
+English README: [`README.md`](https://github.com/zyyziyunying/markdown-toolkit/blob/main/README.md)
 
 ## 功能说明
 
@@ -14,15 +14,18 @@ VS Code 默认的 Markdown 预览通常会保留源码编辑器标签页。
 ## 命令
 
 - `Markdown Toolkit: Open Markdown Preview (In Place)`（`markdownToolkit.openPreviewInPlace`）
+- `Markdown Toolkit: Open Floating Markdown Preview`（`markdownToolkit.openFloatingPreview`）
 - `Markdown Toolkit: Exit Markdown Preview (In Place)`（`markdownToolkit.exitPreviewInPlace`）
 
 ## 触发入口
 
 - 编辑器标题栏按钮（Markdown 文件打开时）
+- Markdown 预览模式下的标题栏/右键菜单（浮动）
 - 预览模式下的标题栏按钮（退出）
 - 编辑器右键菜单
-- 预览区右键菜单（退出）
+- 预览区右键菜单（浮动 + 退出）
 - 快捷键：`Ctrl+Alt+M`（macOS 为 `Cmd+Alt+M`）
+- 浮动快捷键：`Ctrl+Alt+Shift+M`（macOS 为 `Cmd+Alt+Shift+M`）
 
 ## 行为调整
 

@@ -1,10 +1,14 @@
 {
   "name": "markdown-toolkit",
   "displayName": "Markdown Toolkit",
-  "description": "Open Markdown preview in-place with Mermaid rendering and pan/zoom.",
+  "description": "Open Markdown preview in-place or in a detached window with Mermaid rendering and pan/zoom.",
   "version": "1.0.0",
   "publisher": "zhouyuyang",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zyyziyunying/markdown-toolkit.git"
+  },
   "engines": {
     "vscode": "^1.80.0"
   },
@@ -29,9 +33,18 @@
         "icon": "$(book)"
       },
       {
+        "command": "markdownToolkit.openFloatingPreview",
+        "title": "Open Floating Markdown Preview",
+        "shortTitle": "Float Preview",
+        "category": "Markdown Toolkit",
+        "enablement": "!isAuxiliaryWindow",
+        "icon": "$(link-external)"
+      },
+      {
         "command": "markdownToolkit.exitPreviewInPlace",
         "title": "Exit Markdown Preview (In Place)",
         "category": "Markdown Toolkit",
+        "enablement": "!isAuxiliaryWindow",
         "icon": "$(close)"
       }
     ],
@@ -43,9 +56,14 @@
           "when": "resourceLangId == markdown"
         },
         {
+          "command": "markdownToolkit.openFloatingPreview",
+          "group": "navigation@10.1",
+          "when": "!isAuxiliaryWindow && (resourceLangId == markdown || activeCustomEditorId == vscode.markdown.preview.editor)"
+        },
+        {
           "command": "markdownToolkit.exitPreviewInPlace",
           "group": "navigation@11",
-          "when": "activeCustomEditorId == vscode.markdown.preview.editor"
+          "when": "!isAuxiliaryWindow && activeCustomEditorId == vscode.markdown.preview.editor"
         }
       ],
       "editor/context": [
@@ -55,16 +73,26 @@
           "when": "resourceLangId == markdown"
         },
         {
+          "command": "markdownToolkit.openFloatingPreview",
+          "group": "navigation@10.1",
+          "when": "!isAuxiliaryWindow && (resourceLangId == markdown || activeCustomEditorId == vscode.markdown.preview.editor)"
+        },
+        {
           "command": "markdownToolkit.exitPreviewInPlace",
           "group": "navigation@11",
-          "when": "activeCustomEditorId == vscode.markdown.preview.editor"
+          "when": "!isAuxiliaryWindow && activeCustomEditorId == vscode.markdown.preview.editor"
         }
       ],
       "webview/context": [
         {
+          "command": "markdownToolkit.openFloatingPreview",
+          "group": "navigation@10.1",
+          "when": "!isAuxiliaryWindow && activeCustomEditorId == vscode.markdown.preview.editor"
+        },
+        {
           "command": "markdownToolkit.exitPreviewInPlace",
           "group": "navigation@11",
-          "when": "activeCustomEditorId == vscode.markdown.preview.editor"
+          "when": "!isAuxiliaryWindow && activeCustomEditorId == vscode.markdown.preview.editor"
         }
       ]
     },
@@ -74,6 +102,12 @@
         "mac": "cmd+alt+m",
         "command": "markdownToolkit.openPreviewInPlace",
         "when": "editorTextFocus && resourceLangId == markdown"
+      },
+      {
+        "key": "ctrl+alt+shift+m",
+        "mac": "cmd+alt+shift+m",
+        "command": "markdownToolkit.openFloatingPreview",
+        "when": "!isAuxiliaryWindow && ((editorTextFocus && resourceLangId == markdown) || activeCustomEditorId == vscode.markdown.preview.editor)"
       }
     ],
     "markdown.previewScripts": [

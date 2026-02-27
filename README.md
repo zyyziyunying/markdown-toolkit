@@ -1,8 +1,8 @@
 # Markdown Toolkit
 
-A VS Code extension that opens Markdown preview in-place.
+A VS Code extension that opens Markdown preview in-place or in a detached window.
 
-简体中文文档：[`README.zh-CN.md`](README.zh-CN.md)
+简体中文文档：[`README.zh-CN.md`](https://github.com/zyyziyunying/markdown-toolkit/blob/main/README.zh-CN.md)
 
 ## What it does
 
@@ -15,15 +15,18 @@ It also adds Mermaid rendering in Markdown preview with built-in interaction too
 ## Command
 
 - `Markdown Toolkit: Open Markdown Preview (In Place)` (`markdownToolkit.openPreviewInPlace`)
+- `Markdown Toolkit: Open Floating Markdown Preview` (`markdownToolkit.openFloatingPreview`)
 - `Markdown Toolkit: Exit Markdown Preview (In Place)` (`markdownToolkit.exitPreviewInPlace`)
 
 ## Trigger points
 
 - Editor title button (when the active file is Markdown)
+- Editor title/context menu button in preview mode (floating)
 - Editor title button in preview mode (exit)
 - Editor context menu
-- Preview right-click menu (exit)
+- Preview right-click menu (floating + exit)
 - Keyboard shortcut: `Ctrl+Alt+M` (`Cmd+Alt+M` on macOS)
+- Keyboard shortcut (floating): `Ctrl+Alt+Shift+M` (`Cmd+Alt+Shift+M` on macOS)
 
 ## Behavior tweak
 
