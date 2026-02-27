@@ -14,21 +14,27 @@
 
 ## P1（本周修）
 
-- [ ] **修正 Mermaid 拖拽与点击冲突**
+- [ ] **修正 Mermaid 拖拽与点击冲突（延迟验收）**
   - 问题：`pointerdown` 立即 `preventDefault + setPointerCapture`，会抢走点击语义，影响 `bindFunctions` 的交互。
-  - 涉及：`media/mermaidPreview.js:324`、`media/mermaidPreview.js:338`、`media/mermaidPreview.js:339`、`media/mermaidPreview.js:439`。
+  - 涉及：`media/mermaidPreview.js:356`、`media/mermaidPreview.js:390`、`media/mermaidPreview.js:425`。
   - 修法：
     - 引入拖拽阈值（如 3~5px）后再进入 dragging。
     - 仅在“确认拖拽后”再 `preventDefault`/capture。
-    - 对链接、按钮、可点击节点放行点击（不启动拖拽）。
+    - 对链接、可点击节点放行点击（不启动拖拽）。
+  - 当前进展：拖拽手感已验证通过。
+  - 延迟验收：节点点击暂无合适文档，待补测试文档后复测。
   - 验收：节点点击/链接点击可用；拖拽依然顺滑。
 
-- [ ] **撤销全局默认行为污染**
+- [ ] **撤销全局默认行为污染（延迟验收）**
   - 问题：扩展强行设置 `markdown.preview.doubleClickToSwitchToEditor=false`，影响所有 Markdown 预览。
-  - 涉及：`package.json:91`。
+  - 涉及：`package.json`、`media/mermaidPreview.js`。
   - 修法：
     - 移除 `configurationDefaults` 的该项；只在 README 说明“可选建议配置”。
     - 如需保留，至少新增扩展开关并默认不改全局行为。
+  - 当前进展：
+    - 已移除 `configurationDefaults` 的 `markdown.preview.doubleClickToSwitchToEditor`。
+    - 已改为在预览脚本中运行时拦截双击，避免写入全局/工作区设置。
+  - 延迟验收：当前安装包实测“预览双击不退出”未稳定复现，后续再排查 VS Code 预览事件链。
   - 验收：安装扩展后，用户原生 Markdown 预览默认行为不被悄悄改写。
 
 - [ ] **补最小测试护栏**

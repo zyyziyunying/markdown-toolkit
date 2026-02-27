@@ -26,8 +26,10 @@ VS Code 默认的 Markdown 预览通常会保留源码编辑器标签页。
 
 ## 行为调整
 
-扩展默认将 `markdown.preview.doubleClickToSwitchToEditor` 设为 `false`，  
-即在预览中双击不再自动退出阅读模式。
+扩展不再向全局/工作区设置写入 `markdown.preview.doubleClickToSwitchToEditor`。  
+
+改为在运行时拦截 Markdown 预览中的双击事件，  
+在不污染用户设置的前提下保持预览不自动退出阅读模式。
 
 ## Mermaid 支持
 
@@ -49,12 +51,24 @@ VS Code 默认的 Markdown 预览通常会保留源码编辑器标签页。
 
 - `src/extension.ts`：原位预览与退出命令实现
 - `media/mermaid.min.js`：内置 Mermaid 运行时脚本
-- `media/mermaidPreview.js`：Mermaid 渲染与缩放/平移交互
+- `media/mermaidFocusMode.js`：专注模式状态机（进入/退出/切换）
+- `media/mermaidInteraction.js`：图表交互层（缩放/平移/工具栏/双击守卫）
+- `media/mermaidRenderer.js`：Mermaid 渲染流水线（扫描/渲染/调度/安装）
+- `media/mermaidPreview.js`：Mermaid 启动层（主题解析 + mermaid 初始化）
 - `media/mermaidPreview.css`：Mermaid 预览样式
 - `.vscode/launch.json`：扩展调试启动配置
 - `.vscode/tasks.json`：调试使用的编译/监听任务
 - `package.json`：VS Code 贡献点与构建配置
 - `tsconfig.json`：TypeScript 编译配置
+
+### Mermaid 内部模块流转
+
+- 加载顺序：`mermaid.min.js` -> `mermaidFocusMode.js` -> `mermaidInteraction.js` -> `mermaidRenderer.js` -> `mermaidPreview.js`
+- 共享命名空间：`window.MarkdownToolkitMermaid`
+- `focusMode`：负责沉浸式专注遮罩的生命周期
+- `interaction`：负责单图交互，并委托专注模式行为
+- `renderer`：负责 Mermaid 代码块发现、渲染与重渲染调度
+- `preview`：按 VS Code 主题初始化 Mermaid，并安装 renderer
 
 ## 开发
 

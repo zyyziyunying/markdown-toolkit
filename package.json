@@ -19,10 +19,6 @@
     "editor",
     "productivity"
   ],
-  "activationEvents": [
-    "onCommand:markdownToolkit.openPreviewInPlace",
-    "onCommand:markdownToolkit.exitPreviewInPlace"
-  ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
@@ -82,14 +78,14 @@
     ],
     "markdown.previewScripts": [
       "./media/mermaid.min.js",
+      "./media/mermaidFocusMode.js",
+      "./media/mermaidInteraction.js",
+      "./media/mermaidRenderer.js",
       "./media/mermaidPreview.js"
     ],
     "markdown.previewStyles": [
       "./media/mermaidPreview.css"
-    ],
-    "configurationDefaults": {
-      "markdown.preview.doubleClickToSwitchToEditor": false
-    }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",

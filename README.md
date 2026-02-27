@@ -27,8 +27,11 @@ It also adds Mermaid rendering in Markdown preview with built-in interaction too
 
 ## Behavior tweak
 
-The extension sets `markdown.preview.doubleClickToSwitchToEditor` to `false` by default,
-so double-click in preview no longer exits reading mode.
+The extension does not write `markdown.preview.doubleClickToSwitchToEditor` into your
+global/workspace settings anymore.
+
+Instead, it intercepts double-click in Markdown preview at runtime, so preview stays in
+reading mode without polluting user settings.
 
 ## Mermaid support
 
@@ -50,12 +53,24 @@ so double-click in preview no longer exits reading mode.
 
 - `src/extension.ts`: preview-in-place command implementation
 - `media/mermaid.min.js`: bundled Mermaid runtime for preview
-- `media/mermaidPreview.js`: Mermaid rendering + zoom/pan behavior in preview
+- `media/mermaidFocusMode.js`: focus-mode state machine (enter/exit/toggle)
+- `media/mermaidInteraction.js`: diagram interactions (zoom/pan/toolbar/double-click guard)
+- `media/mermaidRenderer.js`: Mermaid render pipeline (scan/render/schedule/install)
+- `media/mermaidPreview.js`: Mermaid bootstrap (theme resolution + mermaid initialize)
 - `media/mermaidPreview.css`: Mermaid preview UI styles
 - `.vscode/launch.json`: extension debug launch presets
 - `.vscode/tasks.json`: compile/watch tasks used by debug presets
 - `package.json`: VS Code contribution and build configuration
 - `tsconfig.json`: TypeScript compiler options
+
+### Mermaid internal module flow
+
+- Load order: `mermaid.min.js` -> `mermaidFocusMode.js` -> `mermaidInteraction.js` -> `mermaidRenderer.js` -> `mermaidPreview.js`
+- Shared namespace: `window.MarkdownToolkitMermaid`
+- `focusMode`: controls immersive overlay lifecycle
+- `interaction`: handles per-diagram interactions and delegates focus actions
+- `renderer`: handles Mermaid block discovery, rendering, and rerender scheduling
+- `preview`: initializes Mermaid with the current VS Code theme and installs renderer
 
 ## Development
 
