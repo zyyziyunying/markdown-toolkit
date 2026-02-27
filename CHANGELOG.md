@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.0.0 - 2026-02-27
+
 - Improve Mermaid long-text stability by increasing `maxTextSize`.
 - Fix Mermaid long-label wrapping layout so node box height grows with wrapped text.
 - Wrap Mermaid source fallback blocks on render error for better readability.
