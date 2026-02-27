@@ -5,6 +5,7 @@
 - Improve Mermaid long-text stability by increasing `maxTextSize`.
 - Fix Mermaid long-label wrapping layout so node box height grows with wrapped text.
 - Wrap Mermaid source fallback blocks on render error for better readability.
+- Auto-select Mermaid light/dark theme based on VS Code color mode.
 - Add VS Code debug launch/task presets (`Run Extension` / `Watch + Run Extension`).
 
 ## 0.0.5

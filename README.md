@@ -37,6 +37,7 @@ so double-click in preview no longer exits reading mode.
   - Increased Mermaid `maxTextSize` to reduce render failures on large diagrams.
   - Enable label wrapping with node box height sync to prevent wrapped text overflow.
   - Wrap Mermaid source fallback blocks on render error for better readability.
+- Mermaid theme now follows VS Code color mode (light/dark) for better contrast.
 - Interactive controls are added on each Mermaid diagram:
   - `+` / `-` buttons to zoom.
   - `Reset` button to restore default zoom and position.
