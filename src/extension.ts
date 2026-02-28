@@ -4,11 +4,23 @@ const OPEN_PREVIEW_IN_PLACE_COMMAND = "markdownToolkit.openPreviewInPlace";
 const OPEN_FLOATING_PREVIEW_COMMAND = "markdownToolkit.openFloatingPreview";
 const EXIT_PREVIEW_IN_PLACE_COMMAND = "markdownToolkit.exitPreviewInPlace";
 const MARKDOWN_PREVIEW_EDITOR = "vscode.markdown.preview.editor";
+const MOVE_ACTIVE_EDITOR_COMMAND = "moveActiveEditor";
+const MOVE_EDITOR_ARGUMENT_BY_GROUP = "group";
+const MOVE_EDITOR_ARGUMENT_TO_POSITION = "position";
+const MAX_DETACHED_PREVIEW_MEMORY = 32;
 
 interface ActiveMarkdownPreview {
   readonly uri: vscode.Uri;
   readonly viewColumn: vscode.ViewColumn;
 }
+
+interface MoveActiveEditorArguments {
+  readonly to: typeof MOVE_EDITOR_ARGUMENT_TO_POSITION;
+  readonly by: typeof MOVE_EDITOR_ARGUMENT_BY_GROUP;
+  readonly value: number;
+}
+
+const detachedPreviewUriMemory = new Set<string>();
 
 function getActiveMarkdownEditor(): vscode.TextEditor | undefined {
   const editor = vscode.window.activeTextEditor;
@@ -17,6 +29,95 @@ function getActiveMarkdownEditor(): vscode.TextEditor | undefined {
   }
 
   return editor.document.languageId === "markdown" ? editor : undefined;
+}
+
+function getMarkdownPreviewUriFromTab(tab: vscode.Tab): vscode.Uri | undefined {
+  if (!(tab.input instanceof vscode.TabInputCustom)) {
+    return undefined;
+  }
+
+  if (tab.input.viewType !== MARKDOWN_PREVIEW_EDITOR) {
+    return undefined;
+  }
+
+  return tab.input.uri;
+}
+
+function rememberDetachedPreview(uri: vscode.Uri): void {
+  const key = uri.toString();
+  detachedPreviewUriMemory.delete(key);
+  detachedPreviewUriMemory.add(key);
+
+  while (detachedPreviewUriMemory.size > MAX_DETACHED_PREVIEW_MEMORY) {
+    const oldest = detachedPreviewUriMemory.values().next().value;
+    if (!oldest) {
+      break;
+    }
+
+    detachedPreviewUriMemory.delete(oldest);
+  }
+}
+
+function findReusablePreviewGroupPosition(): number | undefined {
+  const groups = vscode.window.tabGroups.all;
+  const activeGroup = vscode.window.tabGroups.activeTabGroup;
+  let fallbackPosition: number | undefined;
+
+  for (let index = 0; index < groups.length; index += 1) {
+    const group = groups[index];
+    if (group === activeGroup) {
+      continue;
+    }
+
+    let hasAnyMarkdownPreview = false;
+    let hasRememberedPreview = false;
+
+    for (const tab of group.tabs) {
+      const previewUri = getMarkdownPreviewUriFromTab(tab);
+      if (!previewUri) {
+        continue;
+      }
+
+      hasAnyMarkdownPreview = true;
+      if (detachedPreviewUriMemory.has(previewUri.toString())) {
+        hasRememberedPreview = true;
+        break;
+      }
+    }
+
+    if (hasRememberedPreview) {
+      return index + 1;
+    }
+
+    if (hasAnyMarkdownPreview && fallbackPosition === undefined) {
+      fallbackPosition = index + 1;
+    }
+  }
+
+  return fallbackPosition;
+}
+
+async function tryMoveActiveEditorToReusablePreviewGroup(): Promise<boolean> {
+  const targetPosition = findReusablePreviewGroupPosition();
+  if (!targetPosition) {
+    return false;
+  }
+
+  const argumentsForMove: MoveActiveEditorArguments = {
+    to: MOVE_EDITOR_ARGUMENT_TO_POSITION,
+    by: MOVE_EDITOR_ARGUMENT_BY_GROUP,
+    value: targetPosition,
+  };
+
+  try {
+    await vscode.commands.executeCommand(
+      MOVE_ACTIVE_EDITOR_COMMAND,
+      argumentsForMove,
+    );
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 async function openPreviewInPlace(): Promise<void> {
@@ -47,9 +148,13 @@ async function openFloatingPreview(): Promise<void> {
   const activePreview = getActiveMarkdownPreview();
   if (activePreview) {
     try {
-      await vscode.commands.executeCommand(
-        "workbench.action.moveEditorToNewWindow",
-      );
+      const reusedExistingGroup = await tryMoveActiveEditorToReusablePreviewGroup();
+      if (!reusedExistingGroup) {
+        await vscode.commands.executeCommand(
+          "workbench.action.moveEditorToNewWindow",
+        );
+      }
+      rememberDetachedPreview(activePreview.uri);
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error);
       await vscode.window.showErrorMessage(`打开浮动 Markdown 预览失败: ${reason}`);
@@ -77,7 +182,11 @@ async function openFloatingPreview(): Promise<void> {
         preserveFocus: false,
       },
     );
-    await vscode.commands.executeCommand("workbench.action.moveEditorToNewWindow");
+    const reusedExistingGroup = await tryMoveActiveEditorToReusablePreviewGroup();
+    if (!reusedExistingGroup) {
+      await vscode.commands.executeCommand("workbench.action.moveEditorToNewWindow");
+    }
+    rememberDetachedPreview(editor.document.uri);
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error);
     await vscode.window.showErrorMessage(`打开浮动 Markdown 预览失败: ${reason}`);

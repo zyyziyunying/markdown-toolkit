@@ -36,6 +36,9 @@ global/workspace settings anymore.
 Instead, it intercepts double-click in Markdown preview at runtime, so preview stays in
 reading mode without polluting user settings.
 
+Floating preview now reuses an existing detached Markdown preview group when available,
+instead of always spawning a brand-new VS Code window for every file.
+
 ## Mermaid support
 
 - Fenced code blocks with language `mermaid` are rendered as diagrams in Markdown preview.

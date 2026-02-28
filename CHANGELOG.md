@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.0.3 - 2026-02-28
+
+- Improve floating-preview reuse logic: when an existing Markdown preview group is already detached, new floating previews are moved into that group instead of always spawning another VS Code window.
+
 ## 1.0.2 - 2026-02-28
 
 - Fix floating preview workflow to replace the source Markdown tab before detaching, reducing preview scroll snap-back caused by dual source+preview sync.
