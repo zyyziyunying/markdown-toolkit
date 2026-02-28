@@ -2,7 +2,10 @@
 
 ## Unreleased
 
+## 1.0.2 - 2026-02-28
+
 - Fix floating preview workflow to replace the source Markdown tab before detaching, reducing preview scroll snap-back caused by dual source+preview sync.
+- Gate `Open Markdown Preview (In Place)` by active editor context so it hides/disables when already in preview or outside Markdown source mode.
 
 ## 1.0.1 - 2026-02-27
 
