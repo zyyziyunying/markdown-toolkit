@@ -30,6 +30,7 @@
         "command": "markdownToolkit.openPreviewInPlace",
         "title": "Open Markdown Preview (In Place)",
         "category": "Markdown Toolkit",
+        "enablement": "resourceLangId == markdown && activeCustomEditorId != vscode.markdown.preview.editor",
         "icon": "$(book)"
       },
       {
@@ -53,7 +54,7 @@
         {
           "command": "markdownToolkit.openPreviewInPlace",
           "group": "navigation@10",
-          "when": "resourceLangId == markdown"
+          "when": "resourceLangId == markdown && activeCustomEditorId != vscode.markdown.preview.editor"
         },
         {
           "command": "markdownToolkit.openFloatingPreview",
@@ -70,7 +71,7 @@
         {
           "command": "markdownToolkit.openPreviewInPlace",
           "group": "navigation@10",
-          "when": "resourceLangId == markdown"
+          "when": "resourceLangId == markdown && activeCustomEditorId != vscode.markdown.preview.editor"
         },
         {
           "command": "markdownToolkit.openFloatingPreview",
@@ -92,6 +93,20 @@
         {
           "command": "markdownToolkit.exitPreviewInPlace",
           "group": "navigation@11",
+          "when": "!isAuxiliaryWindow && activeCustomEditorId == vscode.markdown.preview.editor"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "markdownToolkit.openPreviewInPlace",
+          "when": "resourceLangId == markdown && activeCustomEditorId != vscode.markdown.preview.editor"
+        },
+        {
+          "command": "markdownToolkit.openFloatingPreview",
+          "when": "!isAuxiliaryWindow && (resourceLangId == markdown || activeCustomEditorId == vscode.markdown.preview.editor)"
+        },
+        {
+          "command": "markdownToolkit.exitPreviewInPlace",
           "when": "!isAuxiliaryWindow && activeCustomEditorId == vscode.markdown.preview.editor"
         }
       ]
