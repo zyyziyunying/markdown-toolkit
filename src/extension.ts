@@ -71,8 +71,9 @@ async function openFloatingPreview(): Promise<void> {
       editor.document.uri,
       MARKDOWN_PREVIEW_EDITOR,
       {
-        viewColumn: vscode.ViewColumn.Beside,
-        preview: false,
+        // Replace the markdown editor first to avoid dual source+preview sync jitter.
+        viewColumn: editor.viewColumn,
+        preview: true,
         preserveFocus: false,
       },
     );

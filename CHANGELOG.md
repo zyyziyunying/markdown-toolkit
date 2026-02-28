@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Fix floating preview workflow to replace the source Markdown tab before detaching, reducing preview scroll snap-back caused by dual source+preview sync.
+
 ## 1.0.1 - 2026-02-27
 
 - Add `Open Floating Markdown Preview` command to detach preview into a new VS Code window.
