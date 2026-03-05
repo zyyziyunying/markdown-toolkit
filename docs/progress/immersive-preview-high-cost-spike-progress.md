@@ -5,15 +5,19 @@
 
 ## 当前状态
 
-- 状态：未开始
-- 里程碑：D1 机制打样
+- 状态：进行中（D1 已完成）
+- 里程碑：D2 入口与交互闭环
 
 ## 每日进展
 
 ### D1
 
-- 结果：待开始
-- 备注：—
+- 结果：已完成
+- 备注：
+  - 已新增实验开关：`markdownToolkit.experimental.immersiveReadonlyViewer`（默认关闭）。
+  - 已增加最小 custom readonly viewer：`markdownToolkit.markdownReadonlyViewer`，可打开 `.md`。
+  - 已增加“回到源码编辑”命令：`markdownToolkit.switchToSourceEditor`（含标题栏/右键入口）。
+  - 已完成编译验证：`npm run compile` 通过。
 
 ### D2
 
@@ -37,4 +41,4 @@
 
 ## 风险与阻塞
 
-- 暂无
+- 风险：实验开关开启后会写入 `workbench.editorAssociations` 的 `*.md` 映射；需在 D2 验证与用户现有 editor association 的兼容性。

@@ -5,9 +5,9 @@
 
 ## D1 机制打样
 
-- [ ] 新增 feature flag（默认关闭）
-- [ ] 最小 custom readonly viewer 打桩可打开 `.md`
-- [ ] 提供“回到源码编辑”命令入口
+- [x] 新增 feature flag（默认关闭）
+- [x] 最小 custom readonly viewer 打桩可打开 `.md`
+- [x] 提供“回到源码编辑”命令入口
 
 ## D2 入口与交互闭环
 
