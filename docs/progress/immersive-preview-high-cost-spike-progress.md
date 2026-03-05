@@ -5,8 +5,8 @@
 
 ## 当前状态
 
-- 状态：进行中（D1-D3 已完成，D4 待开始）
-- 里程碑：D4 兼容性抽测
+- 状态：进行中（D1-D4 兼容性抽测已完成，D4 可选渲染验证待开始）
+- 里程碑：D5 决策与收口
 
 ## 每日进展
 
@@ -43,8 +43,13 @@
 
 ### D4
 
-- 结果：待开始
-- 备注：计划补充“可选渲染验证”轨道：在只读 viewer 开关下验证 Markdown 渲染正确性（含 Mermaid）并复跑 benchmark，按阈值（`switch p95 <= 71ms 且 <= 110.6ms`、`first <= 290ms 且 < 568ms`）评估性能可行性。
+- 结果：兼容性抽测已完成（可选渲染验证待开始）
+- 备注：
+  - 已完成抽测报告：`./immersive-preview-high-cost-spike-d4-compatibility-smoke.md`。
+  - 用户手测补充：确认“切回源码 <= 1 次操作”与“拆分右移”路径无异常，按当前口径将 D4 对应兼容性项视为通过。
+  - 结论：无阻塞项；识别 1 个高风险（多根工作区 association 粒度）与 1 个中风险（增强预览生态在只读 viewer 中不可用）。
+  - 已完成编译验证：`npm run compile` 通过。
+  - 后续仍需按阈值推进可选渲染验证（`switch p95 <= 71ms 且 <= 110.6ms`、`first <= 290ms 且 < 568ms`）。
 
 ### D5
 
@@ -53,4 +58,5 @@
 
 ## 风险与阻塞
 
-- 风险：实验开关开启后会写入 `workbench.editorAssociations` 的 `*.md` 映射；需在 D2 验证与用户现有 editor association 的兼容性。
+- 高风险：多根工作区下，实验开关同步 `workbench.editorAssociations` 时未覆盖 workspaceFolder 级粒度，可能影响用户已有细粒度关联配置（详见 D4 报告）。
+- 中风险：实验态只读 viewer 不走内置 Markdown Preview 增强管线，部分增强预览扩展能力不可直接复用（详见 D4 报告）。

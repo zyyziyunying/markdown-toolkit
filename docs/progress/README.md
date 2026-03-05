@@ -5,6 +5,7 @@
 ## 当前清单
 
 - [x] `immersive-preview-high-cost-spike-progress.md`（高成本路线 Spike 执行进展）
+- [x] `immersive-preview-high-cost-spike-d4-compatibility-smoke.md`（D4 兼容性抽测报告与问题分级）
 
 ## 关联文档
 
