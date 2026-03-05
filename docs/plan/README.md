@@ -5,7 +5,9 @@
 ## 当前清单
 
 - [x] `immersive-preview-high-cost-spike-plan.md`（高成本路线 1 周 Spike 计划）
+- [ ] `extension-ts-split-plan.md`（`src/extension.ts` 拆分重构计划）
 
 ## 关联文档
 
 - 可行性讨论：`../discussions/immersive-preview-flicker-feasibility.md`
+- 代码入口：`../../src/extension.ts`
