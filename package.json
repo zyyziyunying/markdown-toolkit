@@ -213,6 +213,12 @@
           "default": false,
           "scope": "resource",
           "markdownDescription": "[Experimental] Open `*.md` with `markdownToolkit.markdownReadonlyViewer`; turning this off restores previous editor association."
+        },
+        "markdownToolkit.experimental.immersiveReadonlyViewerRenderMode": {
+          "type": "boolean",
+          "default": false,
+          "scope": "resource",
+          "markdownDescription": "[Experimental] Enable rendered markdown mode in the readonly viewer (includes Mermaid); disable to use plain text mode."
         }
       }
     },

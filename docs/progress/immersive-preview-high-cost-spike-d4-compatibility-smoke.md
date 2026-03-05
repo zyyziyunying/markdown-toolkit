@@ -70,4 +70,4 @@
 ## D4 判定
 
 - 兼容性抽测阶段结论：**完成**（无阻塞项，存在 1 个高风险与 1 个中风险，均有回退路径）。
-- 可选渲染验证（D4 可选项）：**未开始**，待功能推进后按阈值补跑 benchmark。
+- 可选渲染验证（D4 可选项）：**代码已接入，待手测补跑**（见：`./immersive-preview-high-cost-spike-d4-render-mode-implementation.md`）。

@@ -25,9 +25,9 @@
 
 - [x] 抽测常见 Markdown 扩展共存（见：`../progress/immersive-preview-high-cost-spike-d4-compatibility-smoke.md`）
 - [x] 抽测分屏/多窗口、Remote/WSL、多根工作区（见：`../progress/immersive-preview-high-cost-spike-d4-compatibility-smoke.md`）
-- [ ] （可选）在只读 viewer 中接入 Markdown 渲染模式并做基础渲染正确性抽测（含 Mermaid）
-- [ ] （可选）复用 D3 固定脚本补跑 benchmark，对照纯文本 viewer 与 baseline（openWith）
-- [ ] （可选）按阈值判定渲染模式可行性：`switch p95 <= 71ms 且 <= 110.6ms`、`first <= 290ms 且 < 568ms`
+- [ ] （可选）在只读 viewer 中接入 Markdown 渲染模式并做基础渲染正确性抽测（含 Mermaid，代码已接入；手测待后续执行，见：`../progress/immersive-preview-high-cost-spike-d4-render-mode-implementation.md`）
+- [ ] （可选）复用 D3 固定脚本补跑 benchmark，对照纯文本 viewer 与 baseline（openWith，脚本已支持渲染模式对照；补跑待后续执行，见：`../progress/immersive-preview-high-cost-spike-d4-render-mode-implementation.md`）
+- [ ] （可选）按阈值判定渲染模式可行性：`switch p95 <= 71ms 且 <= 110.6ms`、`first <= 290ms 且 < 568ms`（命令已输出 PASS/FAIL 判定；结果待后续回填）
 - [x] 输出阻塞/高/中/低问题清单（含渲染正确性与性能风险，见：`../progress/immersive-preview-high-cost-spike-d4-compatibility-smoke.md`）
 
 ## D5 决策与收口

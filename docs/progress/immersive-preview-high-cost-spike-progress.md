@@ -5,7 +5,7 @@
 
 ## 当前状态
 
-- 状态：进行中（D1-D4 兼容性抽测已完成，D4 可选渲染验证待开始）
+- 状态：进行中（D1-D4 兼容性抽测已完成，D4 可选渲染验证代码已完成，待手测补跑）
 - 里程碑：D5 决策与收口
 
 ## 每日进展
@@ -43,18 +43,28 @@
 
 ### D4
 
-- 结果：兼容性抽测已完成（可选渲染验证待开始）
+- 结果：兼容性抽测已完成；可选渲染验证代码已接入，待手测补跑
 - 备注：
   - 已完成抽测报告：`./immersive-preview-high-cost-spike-d4-compatibility-smoke.md`。
+  - 已补充可选渲染模式推进记录：`./immersive-preview-high-cost-spike-d4-render-mode-implementation.md`。
+  - 已新增配置：`markdownToolkit.experimental.immersiveReadonlyViewerRenderMode`（默认关闭）。
+  - 已扩展 benchmark：渲染模式开启时可对照 plain/render/baseline，并输出阈值 PASS/FAIL 判定。
   - 用户手测补充：确认“切回源码 <= 1 次操作”与“拆分右移”路径无异常，按当前口径将 D4 对应兼容性项视为通过。
   - 结论：无阻塞项；识别 1 个高风险（多根工作区 association 粒度）与 1 个中风险（增强预览生态在只读 viewer 中不可用）。
   - 已完成编译验证：`npm run compile` 通过。
-  - 后续仍需按阈值推进可选渲染验证（`switch p95 <= 71ms 且 <= 110.6ms`、`first <= 290ms 且 < 568ms`）。
+  - 后续仍需按阈值补跑可选渲染验证（`switch p95 <= 71ms 且 <= 110.6ms`、`first <= 290ms 且 < 568ms`）。
 
 ### D5
 
 - 结果：待开始
 - 备注：将基于 D4 对照数据与阈值判定给出“渲染模式去留”结论（继续推进 / 默认关闭保留实验态 / 暂缓）。
+
+## 待后续执行（手测与数据补跑）
+
+1. 开启配置：`markdownToolkit.experimental.immersiveReadonlyViewer=true`、`markdownToolkit.experimental.immersiveReadonlyViewerRenderMode=true`。
+2. 在 Extension Development Host 做渲染正确性抽测（标题/列表/代码块/表格/引用/链接/图片/Mermaid）。
+3. 运行 `markdownToolkit.runImmersiveReadonlyViewerSpikeBenchmark` 并记录结果。
+4. 回填计划 D4 第 28-30 项勾选状态，并在 D5 使用实测数据给出 Go/No-Go。
 
 ## 风险与阻塞
 

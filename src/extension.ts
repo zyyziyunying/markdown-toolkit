@@ -17,6 +17,12 @@ const READONLY_VIEWER_EXPERIMENT_CONFIGURATION_KEY =
   "experimental.immersiveReadonlyViewer";
 const READONLY_VIEWER_EXPERIMENT_FULL_CONFIGURATION_KEY =
   "markdownToolkit.experimental.immersiveReadonlyViewer";
+const READONLY_VIEWER_RENDER_MODE_CONFIGURATION_KEY =
+  "experimental.immersiveReadonlyViewerRenderMode";
+const READONLY_VIEWER_RENDER_MODE_FULL_CONFIGURATION_KEY =
+  "markdownToolkit.experimental.immersiveReadonlyViewerRenderMode";
+const READONLY_VIEWER_RENDER_MODE_CONTEXT_KEY =
+  "markdownToolkit.experimentalReadonlyViewerRenderModeEnabled";
 const PREVIOUS_MARKDOWN_ASSOCIATION_STORAGE_KEY =
   "markdownToolkit.readonlyViewer.previousMarkdownAssociation";
 const WORKBENCH_CONFIGURATION_SECTION = "workbench";
@@ -30,6 +36,10 @@ const MAX_DETACHED_PREVIEW_MEMORY = 32;
 const SPIKE_BENCHMARK_FILE_COUNT = 10;
 const SPIKE_BENCHMARK_ROUNDS = 3;
 const SPIKE_BENCHMARK_SWITCH_DELAY_MS = 80;
+const RENDER_MODE_SWITCH_P95_THRESHOLD_MS = 71;
+const RENDER_MODE_SWITCH_P95_BASELINE_THRESHOLD_MS = 110.6;
+const RENDER_MODE_FIRST_OPEN_THRESHOLD_MS = 290;
+const RENDER_MODE_FIRST_OPEN_BASELINE_THRESHOLD_MS = 568;
 
 interface ActiveMarkdownPreview {
   readonly uri: vscode.Uri;
@@ -46,7 +56,12 @@ interface EditorAssociations {
   [pattern: string]: string;
 }
 
-type SpikeBenchmarkMode = "readonlyViewer" | "baselineOpenWith";
+type ReadonlyViewerRenderMode = "plainText" | "rendered";
+
+type SpikeBenchmarkMode =
+  | "readonlyViewerPlainText"
+  | "readonlyViewerRendered"
+  | "baselineOpenWith";
 
 interface SpikeBenchmarkSample {
   readonly mode: SpikeBenchmarkMode;
@@ -72,6 +87,9 @@ class MarkdownReadonlyDocument implements vscode.CustomDocument {
 
 class MarkdownReadonlyViewerProvider implements vscode.CustomReadonlyEditorProvider<MarkdownReadonlyDocument> {
   private readonly decoder = new TextDecoder("utf-8");
+  private markdownApiRenderCommandUnavailable = false;
+
+  constructor(private readonly extensionUri: vscode.Uri) {}
 
   openCustomDocument(
     uri: vscode.Uri,
@@ -86,8 +104,16 @@ class MarkdownReadonlyViewerProvider implements vscode.CustomReadonlyEditorProvi
     webviewPanel: vscode.WebviewPanel,
     _token: vscode.CancellationToken,
   ): Promise<void> {
+    const localResourceRoots = [vscode.Uri.joinPath(this.extensionUri, "media")];
+    const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
+    if (workspaceFolder) {
+      localResourceRoots.push(workspaceFolder.uri);
+    }
+    localResourceRoots.push(getParentDirectoryUri(document.uri));
+
     webviewPanel.webview.options = {
       enableScripts: true,
+      localResourceRoots,
     };
     await this.updateReadonlyViewerContent(document.uri, webviewPanel.webview);
 
@@ -136,20 +162,129 @@ class MarkdownReadonlyViewerProvider implements vscode.CustomReadonlyEditorProvi
     try {
       const contentBuffer = await vscode.workspace.fs.readFile(uri);
       const markdownContent = this.decoder.decode(contentBuffer);
-      webview.html = this.getReadonlyViewerHtml(uri, markdownContent);
+      const renderMode = getEffectiveReadonlyViewerRenderMode();
+      const renderedMarkdownHtml =
+        renderMode === "rendered"
+          ? await this.renderMarkdownToHtml(markdownContent)
+          : undefined;
+      webview.html = this.getReadonlyViewerHtml(
+        uri,
+        markdownContent,
+        webview,
+        renderMode,
+        renderedMarkdownHtml,
+      );
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error);
       webview.html = this.getReadonlyViewerHtml(
         uri,
         `无法读取 Markdown 文件：${reason}`,
+        webview,
+        "plainText",
       );
     }
   }
 
-  private getReadonlyViewerHtml(uri: vscode.Uri, markdownContent: string): string {
+  private async renderMarkdownToHtml(markdownContent: string): Promise<string> {
+    const renderedHtml = await this.tryRenderMarkdownWithBuiltinApi(markdownContent);
+    if (renderedHtml) {
+      return renderedHtml;
+    }
+
+    return renderMarkdownWithFallback(markdownContent);
+  }
+
+  private async tryRenderMarkdownWithBuiltinApi(
+    markdownContent: string,
+  ): Promise<string | undefined> {
+    if (this.markdownApiRenderCommandUnavailable) {
+      return undefined;
+    }
+
+    try {
+      const rendered = await vscode.commands.executeCommand<unknown>(
+        "markdown.api.render",
+        markdownContent,
+      );
+      return this.extractRenderedMarkdownHtml(rendered);
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : String(error);
+      const reasonLowerCase = reason.toLowerCase();
+      if (
+        reasonLowerCase.includes("markdown.api.render") &&
+        reasonLowerCase.includes("not found")
+      ) {
+        this.markdownApiRenderCommandUnavailable = true;
+      }
+      return undefined;
+    }
+  }
+
+  private extractRenderedMarkdownHtml(rendered: unknown): string | undefined {
+    if (typeof rendered === "string") {
+      return extractBodyInnerHtml(rendered);
+    }
+
+    if (!rendered || typeof rendered !== "object") {
+      return undefined;
+    }
+
+    const candidate = rendered as { readonly html?: unknown };
+    if (typeof candidate.html !== "string") {
+      return undefined;
+    }
+
+    return extractBodyInnerHtml(candidate.html);
+  }
+
+  private getReadonlyViewerHtml(
+    uri: vscode.Uri,
+    markdownContent: string,
+    webview: vscode.Webview,
+    renderMode: ReadonlyViewerRenderMode,
+    renderedMarkdownHtml?: string,
+  ): string {
     const fileLabel = escapeHtml(vscode.workspace.asRelativePath(uri, false));
     const safeContent = escapeHtml(markdownContent);
+    const modeLabel = renderMode === "rendered" ? "渲染模式" : "纯文本模式";
+    const parentDirectoryUri = webview.asWebviewUri(getParentDirectoryUri(uri));
+    const baseHref = parentDirectoryUri.toString().endsWith("/")
+      ? parentDirectoryUri.toString()
+      : `${parentDirectoryUri.toString()}/`;
     const nonce = createNonce();
+    const mermaidCssUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this.extensionUri, "media", "mermaidPreview.css"),
+    );
+    const mermaidUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this.extensionUri, "media", "mermaid.min.js"),
+    );
+    const mermaidInteractionUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this.extensionUri, "media", "mermaidInteraction.js"),
+    );
+    const mermaidFocusModeUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this.extensionUri, "media", "mermaidFocusMode.js"),
+    );
+    const mermaidRendererUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this.extensionUri, "media", "mermaidRenderer.js"),
+    );
+    const mermaidPreviewUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this.extensionUri, "media", "mermaidPreview.js"),
+    );
+    const contentHtml =
+      renderMode === "rendered"
+        ? `<main class="markdown-body">${renderedMarkdownHtml ?? `<pre class="plain-text">${safeContent}</pre>`}</main>`
+        : `<pre class="plain-text">${safeContent}</pre>`;
+    const renderedAssets =
+      renderMode === "rendered"
+        ? `
+    <base href="${baseHref}" />
+    <link rel="stylesheet" href="${mermaidCssUri}" />
+    <script nonce="${nonce}" src="${mermaidUri}"></script>
+    <script nonce="${nonce}" src="${mermaidInteractionUri}"></script>
+    <script nonce="${nonce}" src="${mermaidFocusModeUri}"></script>
+    <script nonce="${nonce}" src="${mermaidRendererUri}"></script>
+    <script nonce="${nonce}" src="${mermaidPreviewUri}"></script>`
+        : "";
 
     return `<!DOCTYPE html>
 <html lang="zh-CN">
@@ -157,8 +292,9 @@ class MarkdownReadonlyViewerProvider implements vscode.CustomReadonlyEditorProvi
     <meta charset="UTF-8" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}'"
+      content="default-src 'none'; img-src ${webview.cspSource} https: data:; style-src ${webview.cspSource} 'unsafe-inline'; script-src ${webview.cspSource} 'nonce-${nonce}'"
     />
+${renderedAssets}
     <style>
       body {
         margin: 0;
@@ -185,6 +321,12 @@ class MarkdownReadonlyViewerProvider implements vscode.CustomReadonlyEditorProvi
         text-overflow: ellipsis;
         white-space: nowrap;
       }
+      .header-mode {
+        padding: 2px 8px;
+        border-radius: 999px;
+        border: 1px solid var(--vscode-panel-border);
+        color: var(--vscode-descriptionForeground);
+      }
       .switch-button {
         border: none;
         border-radius: 4px;
@@ -197,22 +339,66 @@ class MarkdownReadonlyViewerProvider implements vscode.CustomReadonlyEditorProvi
       .switch-button:hover {
         background: var(--vscode-button-hoverBackground);
       }
-      pre {
-        margin: 0;
+      .viewer-content {
         padding: 16px;
+      }
+      .plain-text {
+        margin: 0;
         white-space: pre-wrap;
         word-break: break-word;
         line-height: 1.5;
         font-size: var(--vscode-editor-font-size);
+      }
+      .markdown-body {
+        line-height: 1.65;
+        font-size: var(--vscode-editor-font-size);
+      }
+      .markdown-body h1,
+      .markdown-body h2,
+      .markdown-body h3,
+      .markdown-body h4,
+      .markdown-body h5,
+      .markdown-body h6 {
+        margin-top: 1.2em;
+        margin-bottom: 0.5em;
+      }
+      .markdown-body code {
+        font-family: var(--vscode-editor-font-family);
+      }
+      .markdown-body pre {
+        padding: 12px;
+        border-radius: 6px;
+        overflow-x: auto;
+        background: var(--vscode-textCodeBlock-background, rgba(127, 127, 127, 0.12));
+      }
+      .markdown-body table {
+        border-collapse: collapse;
+        margin: 1em 0;
+      }
+      .markdown-body th,
+      .markdown-body td {
+        border: 1px solid var(--vscode-panel-border, rgba(127, 127, 127, 0.35));
+        padding: 6px 10px;
+      }
+      .markdown-body blockquote {
+        margin: 1em 0;
+        padding-left: 12px;
+        border-left: 3px solid var(--vscode-panel-border, rgba(127, 127, 127, 0.35));
+        color: var(--vscode-descriptionForeground);
+      }
+      .markdown-body img {
+        max-width: 100%;
+        height: auto;
       }
     </style>
   </head>
   <body>
     <header>
       <span class="header-label">${fileLabel} · 实验态只读 Viewer</span>
+      <span class="header-mode">${modeLabel}</span>
       <button id="switch-source-button" class="switch-button" type="button">切回源码编辑</button>
     </header>
-    <pre>${safeContent}</pre>
+    <section class="viewer-content">${contentHtml}</section>
     <script nonce="${nonce}">
       const vscodeApi = acquireVsCodeApi();
       const switchButton = document.getElementById("switch-source-button");
@@ -231,12 +417,239 @@ const detachedPreviewUriMemory = new Set<string>();
 let immersivePreviewEnabled = false;
 let immersivePreviewTransitionInProgress = false;
 let readonlyViewerExperimentEnabled = false;
+let readonlyViewerRenderModeEnabled = false;
+let readonlyViewerRenderModeOverride: ReadonlyViewerRenderMode | undefined;
 
 function escapeHtml(value: string): string {
   return value
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
+}
+
+function getParentDirectoryUri(uri: vscode.Uri): vscode.Uri {
+  const lastSlashIndex = uri.path.lastIndexOf("/");
+  const parentPath = lastSlashIndex > 0 ? uri.path.slice(0, lastSlashIndex) : "/";
+  return uri.with({ path: parentPath });
+}
+
+function extractBodyInnerHtml(html: string): string {
+  const bodyMatch = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+  return bodyMatch ? bodyMatch[1] : html;
+}
+
+function getEffectiveReadonlyViewerRenderMode(): ReadonlyViewerRenderMode {
+  if (readonlyViewerRenderModeOverride) {
+    return readonlyViewerRenderModeOverride;
+  }
+
+  return readonlyViewerRenderModeEnabled ? "rendered" : "plainText";
+}
+
+function renderMarkdownWithFallback(markdownContent: string): string {
+  const lines = markdownContent.replace(/\r\n/g, "\n").split("\n");
+  const output: string[] = [];
+  let index = 0;
+
+  while (index < lines.length) {
+    const line = lines[index];
+
+    if (!line.trim()) {
+      index += 1;
+      continue;
+    }
+
+    const fenceStartMatch = line.match(/^```([\w-]+)?\s*$/);
+    if (fenceStartMatch) {
+      const language = fenceStartMatch[1] ?? "";
+      index += 1;
+      const codeLines: string[] = [];
+      while (index < lines.length && !lines[index].startsWith("```")) {
+        codeLines.push(lines[index]);
+        index += 1;
+      }
+      if (index < lines.length) {
+        index += 1;
+      }
+      const escapedCode = escapeHtml(codeLines.join("\n"));
+      const languageClass = language ? ` class="language-${language}"` : "";
+      output.push(`<pre><code${languageClass}>${escapedCode}</code></pre>`);
+      continue;
+    }
+
+    const headingMatch = line.match(/^(#{1,6})\s+(.+)$/);
+    if (headingMatch) {
+      const level = headingMatch[1].length;
+      output.push(`<h${level}>${renderInlineMarkdown(headingMatch[2])}</h${level}>`);
+      index += 1;
+      continue;
+    }
+
+    if (/^(\|.*\|)$/.test(line) && index + 1 < lines.length) {
+      const delimiterLine = lines[index + 1];
+      if (/^\|?(\s*:?-{3,}:?\s*\|)+\s*$/.test(delimiterLine)) {
+        const headers = splitTableCells(line);
+        const alignments = splitTableCells(delimiterLine).map((cell) => {
+          const normalized = cell.trim();
+          const startsWithColon = normalized.startsWith(":");
+          const endsWithColon = normalized.endsWith(":");
+          if (startsWithColon && endsWithColon) {
+            return "center";
+          }
+          if (endsWithColon) {
+            return "right";
+          }
+          if (startsWithColon) {
+            return "left";
+          }
+          return "";
+        });
+
+        index += 2;
+        const rowHtml: string[] = [];
+        while (index < lines.length && /^\|.*\|$/.test(lines[index])) {
+          const rowCells = splitTableCells(lines[index]);
+          const cells = rowCells.map((cell, cellIndex) => {
+            const align = alignments[cellIndex] ? ` style="text-align: ${alignments[cellIndex]};"` : "";
+            return `<td${align}>${renderInlineMarkdown(cell)}</td>`;
+          });
+          rowHtml.push(`<tr>${cells.join("")}</tr>`);
+          index += 1;
+        }
+
+        const headerHtml = headers.map((header, cellIndex) => {
+          const align = alignments[cellIndex] ? ` style="text-align: ${alignments[cellIndex]};"` : "";
+          return `<th${align}>${renderInlineMarkdown(header)}</th>`;
+        });
+        output.push(
+          `<table><thead><tr>${headerHtml.join("")}</tr></thead><tbody>${rowHtml.join("")}</tbody></table>`,
+        );
+        continue;
+      }
+    }
+
+    const unorderedListMatch = line.match(/^\s*[-*+]\s+(.+)$/);
+    if (unorderedListMatch) {
+      const listItems: string[] = [];
+      while (index < lines.length) {
+        const itemMatch = lines[index].match(/^\s*[-*+]\s+(.+)$/);
+        if (!itemMatch) {
+          break;
+        }
+        listItems.push(`<li>${renderInlineMarkdown(itemMatch[1])}</li>`);
+        index += 1;
+      }
+      output.push(`<ul>${listItems.join("")}</ul>`);
+      continue;
+    }
+
+    const orderedListMatch = line.match(/^\s*\d+\.\s+(.+)$/);
+    if (orderedListMatch) {
+      const listItems: string[] = [];
+      while (index < lines.length) {
+        const itemMatch = lines[index].match(/^\s*\d+\.\s+(.+)$/);
+        if (!itemMatch) {
+          break;
+        }
+        listItems.push(`<li>${renderInlineMarkdown(itemMatch[1])}</li>`);
+        index += 1;
+      }
+      output.push(`<ol>${listItems.join("")}</ol>`);
+      continue;
+    }
+
+    const quoteMatch = line.match(/^>\s?(.*)$/);
+    if (quoteMatch) {
+      const quoteLines: string[] = [];
+      while (index < lines.length) {
+        const currentQuoteMatch = lines[index].match(/^>\s?(.*)$/);
+        if (!currentQuoteMatch) {
+          break;
+        }
+        quoteLines.push(renderInlineMarkdown(currentQuoteMatch[1]));
+        index += 1;
+      }
+      output.push(`<blockquote><p>${quoteLines.join("<br />")}</p></blockquote>`);
+      continue;
+    }
+
+    if (/^\s*([-*_])(\s*\1){2,}\s*$/.test(line)) {
+      output.push("<hr />");
+      index += 1;
+      continue;
+    }
+
+    const paragraphLines: string[] = [];
+    while (index < lines.length && lines[index].trim()) {
+      if (
+        /^#{1,6}\s+/.test(lines[index]) ||
+        /^```/.test(lines[index]) ||
+        /^\s*[-*+]\s+/.test(lines[index]) ||
+        /^\s*\d+\.\s+/.test(lines[index]) ||
+        /^>\s?/.test(lines[index])
+      ) {
+        break;
+      }
+
+      paragraphLines.push(lines[index]);
+      index += 1;
+    }
+    if (paragraphLines.length === 0) {
+      index += 1;
+      continue;
+    }
+    output.push(`<p>${renderInlineMarkdown(paragraphLines.join(" "))}</p>`);
+  }
+
+  return output.join("\n");
+}
+
+function splitTableCells(line: string): string[] {
+  const trimmedLine = line.trim();
+  const withoutEdgePipes = trimmedLine.replace(/^\|/, "").replace(/\|$/, "");
+  return withoutEdgePipes.split("|").map((cell) => cell.trim());
+}
+
+function renderInlineMarkdown(rawText: string): string {
+  const codeSpanTokens: string[] = [];
+  let html = escapeHtml(rawText);
+
+  html = html.replace(/`([^`]+)`/g, (_match, codeText: string) => {
+    const token = `@@CODESPAN${codeSpanTokens.length}@@`;
+    codeSpanTokens.push(`<code>${codeText}</code>`);
+    return token;
+  });
+
+  html = html.replace(
+    /!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]+)")?\)/g,
+    (_match, altText: string, src: string, title?: string) => {
+      const safeAltText = altText;
+      const safeTitle = title ? ` title="${title}"` : "";
+      return `<img src="${src}" alt="${safeAltText}"${safeTitle} />`;
+    },
+  );
+
+  html = html.replace(
+    /\[([^\]]+)\]\(([^)\s]+)(?:\s+"([^"]+)")?\)/g,
+    (_match, text: string, href: string, title?: string) => {
+      const safeText = text;
+      const safeTitle = title ? ` title="${title}"` : "";
+      return `<a href="${href}"${safeTitle}>${safeText}</a>`;
+    },
+  );
+
+  html = html
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/__([^_]+)__/g, "<strong>$1</strong>")
+    .replace(/\*([^*]+)\*/g, "<em>$1</em>")
+    .replace(/_([^_]+)_/g, "<em>$1</em>")
+    .replace(/~~([^~]+)~~/g, "<del>$1</del>");
+
+  for (let tokenIndex = 0; tokenIndex < codeSpanTokens.length; tokenIndex += 1) {
+    html = html.replace(`@@CODESPAN${tokenIndex}@@`, codeSpanTokens[tokenIndex]);
+  }
+
+  return html;
 }
 
 function isReadonlyViewerSwitchToSourceMessage(message: unknown): boolean {
@@ -295,9 +708,15 @@ function calculatePercentile(values: readonly number[], percentile: number): num
 }
 
 function getSpikeBenchmarkModeLabel(mode: SpikeBenchmarkMode): string {
-  return mode === "readonlyViewer"
-    ? "Readonly Viewer"
-    : "Baseline (source + openWith preview)";
+  switch (mode) {
+    case "readonlyViewerPlainText":
+      return "Readonly Viewer (plain text)";
+    case "readonlyViewerRendered":
+      return "Readonly Viewer (render mode)";
+    case "baselineOpenWith":
+    default:
+      return "Baseline (source + openWith preview)";
+  }
 }
 
 function getSpikeBenchmarkSummaryLine(result: SpikeBenchmarkResult): string {
@@ -317,6 +736,28 @@ function getDeltaPercent(current: number, baseline: number): number {
   }
 
   return ((current - baseline) / baseline) * 100;
+}
+
+function getThresholdStatus(passed: boolean): string {
+  return passed ? "PASS" : "FAIL";
+}
+
+function getRenderModeThresholdEvaluationLines(
+  renderModeResult: SpikeBenchmarkResult,
+): string[] {
+  const switchP95ThresholdPassed =
+    renderModeResult.switchP95Ms <= RENDER_MODE_SWITCH_P95_THRESHOLD_MS &&
+    renderModeResult.switchP95Ms <= RENDER_MODE_SWITCH_P95_BASELINE_THRESHOLD_MS;
+  const firstOpenThresholdPassed =
+    renderModeResult.firstOpenMs <= RENDER_MODE_FIRST_OPEN_THRESHOLD_MS &&
+    renderModeResult.firstOpenMs < RENDER_MODE_FIRST_OPEN_BASELINE_THRESHOLD_MS;
+  const allThresholdPassed = switchP95ThresholdPassed && firstOpenThresholdPassed;
+
+  return [
+    `Render mode threshold check | overall=${getThresholdStatus(allThresholdPassed)}`,
+    `- switch p95=${roundToTwoDecimals(renderModeResult.switchP95Ms)}ms | threshold=${RENDER_MODE_SWITCH_P95_THRESHOLD_MS}ms and ${RENDER_MODE_SWITCH_P95_BASELINE_THRESHOLD_MS}ms | ${getThresholdStatus(switchP95ThresholdPassed)}`,
+    `- first=${roundToTwoDecimals(renderModeResult.firstOpenMs)}ms | threshold=${RENDER_MODE_FIRST_OPEN_THRESHOLD_MS}ms and <${RENDER_MODE_FIRST_OPEN_BASELINE_THRESHOLD_MS}ms | ${getThresholdStatus(firstOpenThresholdPassed)}`,
+  ];
 }
 
 async function collectMarkdownUrisForSpikeBenchmark(): Promise<vscode.Uri[] | undefined> {
@@ -351,6 +792,12 @@ function isReadonlyViewerExperimentEnabledFromConfiguration(): boolean {
   return vscode.workspace
     .getConfiguration(READONLY_VIEWER_EXPERIMENT_CONFIGURATION_SECTION)
     .get<boolean>(READONLY_VIEWER_EXPERIMENT_CONFIGURATION_KEY, false);
+}
+
+function isReadonlyViewerRenderModeEnabledFromConfiguration(): boolean {
+  return vscode.workspace
+    .getConfiguration(READONLY_VIEWER_EXPERIMENT_CONFIGURATION_SECTION)
+    .get<boolean>(READONLY_VIEWER_RENDER_MODE_CONFIGURATION_KEY, false);
 }
 
 function getReadonlyViewerAssociationTarget(): vscode.ConfigurationTarget {
@@ -389,10 +836,17 @@ async function syncReadonlyViewerExperiment(
 ): Promise<void> {
   readonlyViewerExperimentEnabled =
     isReadonlyViewerExperimentEnabledFromConfiguration();
+  readonlyViewerRenderModeEnabled =
+    isReadonlyViewerRenderModeEnabledFromConfiguration();
   await vscode.commands.executeCommand(
     "setContext",
     READONLY_VIEWER_EXPERIMENT_CONTEXT_KEY,
     readonlyViewerExperimentEnabled,
+  );
+  await vscode.commands.executeCommand(
+    "setContext",
+    READONLY_VIEWER_RENDER_MODE_CONTEXT_KEY,
+    readonlyViewerRenderModeEnabled,
   );
   await syncReadonlyViewerEditorAssociation(
     context,
@@ -499,42 +953,56 @@ async function runSpikeBenchmarkMode(
 ): Promise<SpikeBenchmarkResult> {
   const viewColumn = vscode.window.activeTextEditor?.viewColumn ?? vscode.ViewColumn.One;
   const samples: SpikeBenchmarkSample[] = [];
+  const previousRenderModeOverride = readonlyViewerRenderModeOverride;
+
+  if (mode === "readonlyViewerPlainText") {
+    readonlyViewerRenderModeOverride = "plainText";
+  } else if (mode === "readonlyViewerRendered") {
+    readonlyViewerRenderModeOverride = "rendered";
+  } else {
+    readonlyViewerRenderModeOverride = undefined;
+  }
+
   outputChannel.appendLine(`开始模式：${getSpikeBenchmarkModeLabel(mode)}`);
 
-  for (let round = 1; round <= SPIKE_BENCHMARK_ROUNDS; round += 1) {
-    for (let fileIndex = 0; fileIndex < markdownUris.length; fileIndex += 1) {
-      const uri = markdownUris[fileIndex];
-      const startedAt = Date.now();
+  try {
+    for (let round = 1; round <= SPIKE_BENCHMARK_ROUNDS; round += 1) {
+      for (let fileIndex = 0; fileIndex < markdownUris.length; fileIndex += 1) {
+        const uri = markdownUris[fileIndex];
+        const startedAt = Date.now();
 
-      if (mode === "readonlyViewer") {
-        await vscode.commands.executeCommand(
-          "vscode.openWith",
+        if (mode === "baselineOpenWith") {
+          await openMarkdownSourceEditor(uri, viewColumn);
+          await openMarkdownPreview(uri, viewColumn);
+        } else {
+          await vscode.commands.executeCommand(
+            "vscode.openWith",
+            uri,
+            MARKDOWN_READONLY_VIEWER_EDITOR,
+            {
+              viewColumn,
+              preview: true,
+              preserveFocus: false,
+            },
+          );
+        }
+
+        const durationMs = Date.now() - startedAt;
+        samples.push({
+          mode,
+          round,
+          fileIndex: fileIndex + 1,
           uri,
-          MARKDOWN_READONLY_VIEWER_EDITOR,
-          {
-            viewColumn,
-            preview: true,
-            preserveFocus: false,
-          },
+          durationMs,
+        });
+        outputChannel.appendLine(
+          `[${getSpikeBenchmarkModeLabel(mode)}] round=${round} file=${fileIndex + 1} duration=${durationMs}ms uri=${uri.toString()}`,
         );
-      } else {
-        await openMarkdownSourceEditor(uri, viewColumn);
-        await openMarkdownPreview(uri, viewColumn);
+        await delay(SPIKE_BENCHMARK_SWITCH_DELAY_MS);
       }
-
-      const durationMs = Date.now() - startedAt;
-      samples.push({
-        mode,
-        round,
-        fileIndex: fileIndex + 1,
-        uri,
-        durationMs,
-      });
-      outputChannel.appendLine(
-        `[${getSpikeBenchmarkModeLabel(mode)}] round=${round} file=${fileIndex + 1} duration=${durationMs}ms uri=${uri.toString()}`,
-      );
-      await delay(SPIKE_BENCHMARK_SWITCH_DELAY_MS);
     }
+  } finally {
+    readonlyViewerRenderModeOverride = previousRenderModeOverride;
   }
 
   const firstOpenMs = samples[0]?.durationMs ?? 0;
@@ -552,7 +1020,7 @@ async function runSpikeBenchmarkMode(
 async function runImmersiveReadonlyViewerSpikeBenchmark(): Promise<void> {
   if (!readonlyViewerExperimentEnabled) {
     await vscode.window.showInformationMessage(
-      "请先启用 markdownToolkit.experimental.immersiveReadonlyViewer 再执行 D3 benchmark。",
+      "请先启用 markdownToolkit.experimental.immersiveReadonlyViewer 再执行 Spike benchmark。",
     );
     return;
   }
@@ -568,7 +1036,7 @@ async function runImmersiveReadonlyViewerSpikeBenchmark(): Promise<void> {
   outputChannel.clear();
   outputChannel.show(true);
   outputChannel.appendLine(
-    `D3 benchmark started at ${new Date().toISOString()} (${SPIKE_BENCHMARK_FILE_COUNT} files x ${SPIKE_BENCHMARK_ROUNDS} rounds)`,
+    `Spike benchmark started at ${new Date().toISOString()} (${SPIKE_BENCHMARK_FILE_COUNT} files x ${SPIKE_BENCHMARK_ROUNDS} rounds)`,
   );
   outputChannel.appendLine("Files:");
   for (const uri of markdownUris) {
@@ -577,41 +1045,87 @@ async function runImmersiveReadonlyViewerSpikeBenchmark(): Promise<void> {
   outputChannel.appendLine("");
 
   try {
-    const readonlyViewerResult = await runSpikeBenchmarkMode(
-      "readonlyViewer",
+    const readonlyViewerPlainResult = await runSpikeBenchmarkMode(
+      "readonlyViewerPlainText",
       markdownUris,
       outputChannel,
     );
     outputChannel.appendLine("");
+    let readonlyViewerRenderResult: SpikeBenchmarkResult | undefined;
+    if (readonlyViewerRenderModeEnabled) {
+      readonlyViewerRenderResult = await runSpikeBenchmarkMode(
+        "readonlyViewerRendered",
+        markdownUris,
+        outputChannel,
+      );
+      outputChannel.appendLine("");
+    } else {
+      outputChannel.appendLine(
+        "渲染模式 benchmark 已跳过：请启用 markdownToolkit.experimental.immersiveReadonlyViewerRenderMode 后补跑。",
+      );
+      outputChannel.appendLine("");
+    }
+
     const baselineResult = await runSpikeBenchmarkMode(
       "baselineOpenWith",
       markdownUris,
       outputChannel,
     );
 
-    const firstOpenDelta = getDeltaPercent(
-      readonlyViewerResult.firstOpenMs,
+    const plainFirstOpenDelta = getDeltaPercent(
+      readonlyViewerPlainResult.firstOpenMs,
       baselineResult.firstOpenMs,
     );
-    const switchP95Delta = getDeltaPercent(
-      readonlyViewerResult.switchP95Ms,
+    const plainSwitchP95Delta = getDeltaPercent(
+      readonlyViewerPlainResult.switchP95Ms,
       baselineResult.switchP95Ms,
     );
 
     outputChannel.appendLine("");
     outputChannel.appendLine("Summary:");
-    outputChannel.appendLine(getSpikeBenchmarkSummaryLine(readonlyViewerResult));
+    outputChannel.appendLine(getSpikeBenchmarkSummaryLine(readonlyViewerPlainResult));
+    if (readonlyViewerRenderResult) {
+      outputChannel.appendLine(getSpikeBenchmarkSummaryLine(readonlyViewerRenderResult));
+    }
     outputChannel.appendLine(getSpikeBenchmarkSummaryLine(baselineResult));
     outputChannel.appendLine(
-      `Readonly vs Baseline delta | first=${roundToTwoDecimals(firstOpenDelta)}% | switch p95=${roundToTwoDecimals(switchP95Delta)}%`,
+      `Plain readonly vs Baseline delta | first=${roundToTwoDecimals(plainFirstOpenDelta)}% | switch p95=${roundToTwoDecimals(plainSwitchP95Delta)}%`,
     );
+    if (readonlyViewerRenderResult) {
+      const renderFirstOpenDeltaVsBaseline = getDeltaPercent(
+        readonlyViewerRenderResult.firstOpenMs,
+        baselineResult.firstOpenMs,
+      );
+      const renderSwitchP95DeltaVsBaseline = getDeltaPercent(
+        readonlyViewerRenderResult.switchP95Ms,
+        baselineResult.switchP95Ms,
+      );
+      const renderFirstOpenDeltaVsPlain = getDeltaPercent(
+        readonlyViewerRenderResult.firstOpenMs,
+        readonlyViewerPlainResult.firstOpenMs,
+      );
+      const renderSwitchP95DeltaVsPlain = getDeltaPercent(
+        readonlyViewerRenderResult.switchP95Ms,
+        readonlyViewerPlainResult.switchP95Ms,
+      );
+      outputChannel.appendLine(
+        `Render readonly vs Baseline delta | first=${roundToTwoDecimals(renderFirstOpenDeltaVsBaseline)}% | switch p95=${roundToTwoDecimals(renderSwitchP95DeltaVsBaseline)}%`,
+      );
+      outputChannel.appendLine(
+        `Render readonly vs Plain readonly delta | first=${roundToTwoDecimals(renderFirstOpenDeltaVsPlain)}% | switch p95=${roundToTwoDecimals(renderSwitchP95DeltaVsPlain)}%`,
+      );
+      outputChannel.appendLine("");
+      for (const line of getRenderModeThresholdEvaluationLines(readonlyViewerRenderResult)) {
+        outputChannel.appendLine(line);
+      }
+    }
 
     await vscode.window.showInformationMessage(
-      "D3 benchmark 已完成，详情请查看 Output: Markdown Toolkit Spike Benchmark。",
+      "Spike benchmark 已完成，详情请查看 Output: Markdown Toolkit Spike Benchmark。",
     );
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error);
-    await vscode.window.showErrorMessage(`执行 D3 benchmark 失败: ${reason}`);
+    await vscode.window.showErrorMessage(`执行 Spike benchmark 失败: ${reason}`);
   }
 }
 
@@ -933,13 +1447,18 @@ export function activate(context: vscode.ExtensionContext): void {
     READONLY_VIEWER_EXPERIMENT_CONTEXT_KEY,
     false,
   );
+  void vscode.commands.executeCommand(
+    "setContext",
+    READONLY_VIEWER_RENDER_MODE_CONTEXT_KEY,
+    false,
+  );
   void syncReadonlyViewerExperiment(context).catch(async (error) => {
     const reason = error instanceof Error ? error.message : String(error);
     await vscode.window.showErrorMessage(`初始化实验态只读 Viewer 失败: ${reason}`);
   });
   const readonlyViewerProviderDisposable = vscode.window.registerCustomEditorProvider(
     MARKDOWN_READONLY_VIEWER_EDITOR,
-    new MarkdownReadonlyViewerProvider(),
+    new MarkdownReadonlyViewerProvider(context.extensionUri),
     {
       webviewOptions: {
         retainContextWhenHidden: true,
@@ -981,6 +1500,9 @@ export function activate(context: vscode.ExtensionContext): void {
       if (
         !event.affectsConfiguration(
           READONLY_VIEWER_EXPERIMENT_FULL_CONFIGURATION_KEY,
+        ) &&
+        !event.affectsConfiguration(
+          READONLY_VIEWER_RENDER_MODE_FULL_CONFIGURATION_KEY,
         )
       ) {
         return;
