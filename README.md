@@ -8,7 +8,11 @@ A VS Code extension that opens Markdown preview in-place or in a detached window
 
 VS Code's default Markdown preview action usually keeps the source editor tab open.
 This extension provides an "in-place" preview command that replaces the current
-Markdown editor tab with a preview editor in the same view column.
+Markdown editor tab with a preview editor in the same view column and starts an
+immersive preview session.
+
+While the session is active, switching to other Markdown files also opens preview
+automatically until you run the exit command.
 
 It also adds Mermaid rendering in Markdown preview with built-in interaction tools.
 
@@ -29,6 +33,9 @@ It also adds Mermaid rendering in Markdown preview with built-in interaction too
 - Keyboard shortcut (floating): `Ctrl+Alt+Shift+M` (`Cmd+Alt+Shift+M` on macOS)
 
 ## Behavior tweak
+
+When immersive preview session is enabled, any Markdown file you switch to stays in
+preview automatically. Running exit closes both the current preview and the session.
 
 The extension does not write `markdown.preview.doubleClickToSwitchToEditor` into your
 global/workspace settings anymore.

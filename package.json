@@ -45,7 +45,7 @@
         "command": "markdownToolkit.exitPreviewInPlace",
         "title": "Exit Markdown Preview (In Place)",
         "category": "Markdown Toolkit",
-        "enablement": "!isAuxiliaryWindow",
+        "enablement": "!isAuxiliaryWindow && (activeCustomEditorId == vscode.markdown.preview.editor || markdownToolkit.immersiveEnabled)",
         "icon": "$(close)"
       }
     ],
@@ -107,7 +107,7 @@
         },
         {
           "command": "markdownToolkit.exitPreviewInPlace",
-          "when": "!isAuxiliaryWindow && activeCustomEditorId == vscode.markdown.preview.editor"
+          "when": "!isAuxiliaryWindow && (activeCustomEditorId == vscode.markdown.preview.editor || markdownToolkit.immersiveEnabled)"
         }
       ]
     },

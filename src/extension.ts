@@ -4,6 +4,7 @@ const OPEN_PREVIEW_IN_PLACE_COMMAND = "markdownToolkit.openPreviewInPlace";
 const OPEN_FLOATING_PREVIEW_COMMAND = "markdownToolkit.openFloatingPreview";
 const EXIT_PREVIEW_IN_PLACE_COMMAND = "markdownToolkit.exitPreviewInPlace";
 const MARKDOWN_PREVIEW_EDITOR = "vscode.markdown.preview.editor";
+const IMMERSIVE_PREVIEW_CONTEXT_KEY = "markdownToolkit.immersiveEnabled";
 const MOVE_ACTIVE_EDITOR_COMMAND = "moveActiveEditor";
 const MOVE_EDITOR_ARGUMENT_BY_GROUP = "group";
 const MOVE_EDITOR_ARGUMENT_TO_POSITION = "position";
@@ -21,6 +22,8 @@ interface MoveActiveEditorArguments {
 }
 
 const detachedPreviewUriMemory = new Set<string>();
+let immersivePreviewEnabled = false;
+let immersivePreviewTransitionInProgress = false;
 
 function getActiveMarkdownEditor(): vscode.TextEditor | undefined {
   const editor = vscode.window.activeTextEditor;
@@ -29,6 +32,26 @@ function getActiveMarkdownEditor(): vscode.TextEditor | undefined {
   }
 
   return editor.document.languageId === "markdown" ? editor : undefined;
+}
+
+async function setImmersivePreviewEnabled(enabled: boolean): Promise<void> {
+  immersivePreviewEnabled = enabled;
+  await vscode.commands.executeCommand(
+    "setContext",
+    IMMERSIVE_PREVIEW_CONTEXT_KEY,
+    enabled,
+  );
+}
+
+async function openMarkdownPreview(
+  uri: vscode.Uri,
+  viewColumn: vscode.ViewColumn | undefined,
+): Promise<void> {
+  await vscode.commands.executeCommand("vscode.openWith", uri, MARKDOWN_PREVIEW_EDITOR, {
+    viewColumn,
+    preview: true,
+    preserveFocus: false,
+  });
 }
 
 function getMarkdownPreviewUriFromTab(tab: vscode.Tab): vscode.Uri | undefined {
@@ -127,18 +150,14 @@ async function openPreviewInPlace(): Promise<void> {
     return;
   }
 
+  const previousImmersiveState = immersivePreviewEnabled;
   try {
-    await vscode.commands.executeCommand(
-      "vscode.openWith",
-      editor.document.uri,
-      MARKDOWN_PREVIEW_EDITOR,
-      {
-        viewColumn: editor.viewColumn,
-        preview: true,
-        preserveFocus: false,
-      },
-    );
+    await setImmersivePreviewEnabled(true);
+    await openMarkdownPreview(editor.document.uri, editor.viewColumn);
   } catch (error) {
+    if (immersivePreviewEnabled !== previousImmersiveState) {
+      await setImmersivePreviewEnabled(previousImmersiveState);
+    }
     const reason = error instanceof Error ? error.message : String(error);
     await vscode.window.showErrorMessage(`打开 Markdown 预览失败: ${reason}`);
   }
@@ -171,17 +190,8 @@ async function openFloatingPreview(): Promise<void> {
   }
 
   try {
-    await vscode.commands.executeCommand(
-      "vscode.openWith",
-      editor.document.uri,
-      MARKDOWN_PREVIEW_EDITOR,
-      {
-        // Replace the markdown editor first to avoid dual source+preview sync jitter.
-        viewColumn: editor.viewColumn,
-        preview: true,
-        preserveFocus: false,
-      },
-    );
+    // Replace the markdown editor first to avoid dual source+preview sync jitter.
+    await openMarkdownPreview(editor.document.uri, editor.viewColumn);
     const reusedExistingGroup = await tryMoveActiveEditorToReusablePreviewGroup();
     if (!reusedExistingGroup) {
       await vscode.commands.executeCommand("workbench.action.moveEditorToNewWindow");
@@ -215,9 +225,20 @@ function getActiveMarkdownPreview(): ActiveMarkdownPreview | undefined {
 }
 
 async function exitPreviewInPlace(): Promise<void> {
+  const hadImmersiveSession = immersivePreviewEnabled;
   const preview = getActiveMarkdownPreview();
+  try {
+    await setImmersivePreviewEnabled(false);
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    await vscode.window.showErrorMessage(`退出 Markdown 阅读模式失败: ${reason}`);
+    return;
+  }
+
   if (!preview) {
-    await vscode.window.showWarningMessage("当前不在 Markdown 阅读模式。");
+    if (!hadImmersiveSession) {
+      await vscode.window.showWarningMessage("当前不在 Markdown 阅读模式。");
+    }
     return;
   }
 
@@ -238,7 +259,35 @@ async function exitPreviewInPlace(): Promise<void> {
   }
 }
 
+async function handleActiveTextEditorChanged(
+  editor: vscode.TextEditor | undefined,
+): Promise<void> {
+  if (
+    !immersivePreviewEnabled ||
+    immersivePreviewTransitionInProgress ||
+    !editor ||
+    editor.document.languageId !== "markdown"
+  ) {
+    return;
+  }
+
+  immersivePreviewTransitionInProgress = true;
+  try {
+    await openMarkdownPreview(editor.document.uri, editor.viewColumn);
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    await vscode.window.showErrorMessage(`自动切换 Markdown 预览失败: ${reason}`);
+  } finally {
+    immersivePreviewTransitionInProgress = false;
+  }
+}
+
 export function activate(context: vscode.ExtensionContext): void {
+  void vscode.commands.executeCommand(
+    "setContext",
+    IMMERSIVE_PREVIEW_CONTEXT_KEY,
+    false,
+  );
   const openDisposable = vscode.commands.registerCommand(
     OPEN_PREVIEW_IN_PLACE_COMMAND,
     openPreviewInPlace,
@@ -251,8 +300,18 @@ export function activate(context: vscode.ExtensionContext): void {
     EXIT_PREVIEW_IN_PLACE_COMMAND,
     exitPreviewInPlace,
   );
+  const activeEditorChangeDisposable = vscode.window.onDidChangeActiveTextEditor(
+    (editor) => {
+      void handleActiveTextEditorChanged(editor);
+    },
+  );
 
-  context.subscriptions.push(openDisposable, floatingDisposable, exitDisposable);
+  context.subscriptions.push(
+    openDisposable,
+    floatingDisposable,
+    exitDisposable,
+    activeEditorChangeDisposable,
+  );
 }
 
 export function deactivate(): void {}

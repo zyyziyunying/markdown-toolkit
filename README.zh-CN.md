@@ -7,7 +7,8 @@ English README: [`README.md`](https://github.com/zyyziyunying/markdown-toolkit/b
 ## 功能说明
 
 VS Code 默认的 Markdown 预览通常会保留源码编辑器标签页。  
-本扩展提供“原位预览”命令，会在同一分栏中用预览编辑器替换当前 Markdown 标签页。
+本扩展提供“原位预览”命令，会在同一分栏中用预览编辑器替换当前 Markdown 标签页，并进入沉浸式预览会话。  
+会话开启后，切换到其他 Markdown 文件也会自动预览，直到执行退出命令。
 
 同时，它还为 Markdown 预览增加了 Mermaid 渲染和图表交互能力。
 
@@ -28,6 +29,9 @@ VS Code 默认的 Markdown 预览通常会保留源码编辑器标签页。
 - 浮动快捷键：`Ctrl+Alt+Shift+M`（macOS 为 `Cmd+Alt+Shift+M`）
 
 ## 行为调整
+
+沉浸式预览会话开启后，切换到任意 Markdown 文件都会自动进入预览；  
+执行退出命令会同时关闭沉浸式会话并回到源码编辑。
 
 扩展不再向全局/工作区设置写入 `markdown.preview.doubleClickToSwitchToEditor`。  
 
