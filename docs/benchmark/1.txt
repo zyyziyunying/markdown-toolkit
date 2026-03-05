@@ -1,0 +1,81 @@
+D3 benchmark started at 2026-03-05T08:42:38.622Z (10 files x 3 rounds)
+Files:
+- file:///d%3A/dev/flutter_code/harrypet_flutter/docs/app_release_checklist.md
+- file:///d%3A/dev/flutter_code/harrypet_flutter/docs/future_app_architecture/future_app_architecture_discussion.md
+- file:///d%3A/dev/flutter_code/harrypet_flutter/docs/future_app_architecture/future_app_architecture_overview.md
+- file:///d%3A/dev/flutter_code/harrypet_flutter/docs/future_app_architecture/future_app_architecture_roadmap.md
+- file:///d%3A/dev/flutter_code/harrypet_flutter/docs/notes/Rust%20%E9%98%B6%E6%AE%B5%E4%B8%89%EF%BC%9A%E5%AD%A6%E4%B9%A0%E8%B5%84%E6%BA%90%E4%B8%8E%E6%8C%81%E7%BB%AD%E8%B7%9F%E8%BF%9B.md
+- file:///d%3A/dev/flutter_code/harrypet_flutter/docs/notes/Rust%20%E9%98%B6%E6%AE%B5%E4%B8%80%EF%BC%9A%E6%89%80%E6%9C%89%E6%9D%83%E5%BF%83%E6%99%BA%E6%A8%A1%E5%9E%8B.md
+- file:///d%3A/dev/flutter_code/harrypet_flutter/docs/notes/Rust%20%E7%BD%91%E7%BB%9C%E5%BA%93%E6%A6%82%E8%A7%88.md
+- file:///d%3A/dev/flutter_code/harrypet_flutter/docs/notes/Rust%20%E5%AD%A6%E4%B9%A0%E8%B7%AF%E5%BE%84%E6%80%BB%E8%A7%88.md
+- file:///d%3A/dev/flutter_code/harrypet_flutter/docs/README.md
+- file:///d%3A/dev/flutter_code/harrypet_flutter/docs/vscode_terminal_stable_config.md
+
+开始模式：Readonly Viewer
+[Readonly Viewer] round=1 file=1 duration=132ms uri=file:///d%3A/dev/flutter_code/harrypet_flutter/docs/app_release_checklist.md
+[Readonly Viewer] round=1 file=2 duration=48ms uri=file:///d%3A/dev/flutter_code/harrypet_flutter/docs/future_app_architecture/future_app_architecture_discussion.md
+[Readonly Viewer] round=1 file=3 duration=33ms uri=file:///d%3A/dev/flutter_code/harrypet_flutter/docs/future_app_architecture/future_app_architecture_overview.md
+[Readonly Viewer] round=1 file=4 duration=31ms uri=file:///d%3A/dev/flutter_code/harrypet_flutter/docs/future_app_architecture/future_app_architecture_roadmap.md
+[Readonly Viewer] round=1 file=5 duration=38ms uri=file:///d%3A/dev/flutter_code/harrypet_flutter/docs/notes/Rust%20%E9%98%B6%E6%AE%B5%E4%B8%89%EF%BC%9A%E5%AD%A6%E4%B9%A0%E8%B5%84%E6%BA%90%E4%B8%8E%E6%8C%81%E7%BB%AD%E8%B7%9F%E8%BF%9B.md
+[Readonly Viewer] round=1 file=6 duration=40ms uri=file:///d%3A/dev/flutter_code/harrypet_flutter/docs/notes/Rust%20%E9%98%B6%E6%AE%B5%E4%B8%80%EF%BC%9A%E6%89%80%E6%9C%89%E6%9D%83%E5%BF%83%E6%99%BA%E6%A8%A1%E5%9E%8B.md
+[Readonly Viewer] round=1 file=7 duration=29ms uri=file:///d%3A/dev/flutter_code/harrypet_flutter/docs/notes/Rust%20%E7%BD%91%E7%BB%9C%E5%BA%93%E6%A6%82%E8%A7%88.md
+[Readonly Viewer] round=1 file=8 duration=34ms uri=file:///d%3A/dev/flutter_code/harrypet_flutter/docs/notes/Rust%20%E5%AD%A6%E4%B9%A0%E8%B7%AF%E5%BE%84%E6%80%BB%E8%A7%88.md
+[Readonly Viewer] round=1 file=9 duration=33ms uri=file:///d%3A/dev/flutter_code/harrypet_flutter/docs/README.md
+[Readonly Viewer] round=1 file=10 duration=36ms uri=file:///d%3A/dev/flutter_code/harrypet_flutter/docs/vscode_terminal_stable_config.md
+[Readonly Viewer] round=2 file=1 duration=30ms uri=file:///d%3A/dev/flutter_code/harrypet_flutter/docs/app_release_checklist.md
+[Readonly Viewer] round=2 file=2 duration=27ms uri=file:///d%3A/dev/flutter_code/harrypet_flutter/docs/future_app_architecture/future_app_architecture_discussion.md
+[Readonly Viewer] round=2 file=3 duration=28ms uri=file:///d%3A/dev/flutter_code/harrypet_flutter/docs/future_app_architecture/future_app_architecture_overview.md
+[Readonly Viewer] round=2 file=4 duration=24ms uri=file:///d%3A/dev/flutter_code/harrypet_flutter/docs/future_app_architecture/future_app_architecture_roadmap.md
+[Readonly Viewer] round=2 file=5 duration=25ms uri=file:///d%3A/dev/flutter_code/harrypet_flutter/docs/notes/Rust%20%E9%98%B6%E6%AE%B5%E4%B8%89%EF%BC%9A%E5%AD%A6%E4%B9%A0%E8%B5%84%E6%BA%90%E4%B8%8E%E6%8C%81%E7%BB%AD%E8%B7%9F%E8%BF%9B.md
+[Readonly Viewer] round=2 file=6 duration=26ms uri=file:///d%3A/dev/flutter_code/harrypet_flutter/docs/notes/Rust%20%E9%98%B6%E6%AE%B5%E4%B8%80%EF%BC%9A%E6%89%80%E6%9C%89%E6%9D%83%E5%BF%83%E6%99%BA%E6%A8%A1%E5%9E%8B.md
+[Readonly Viewer] round=2 file=7 duration=30ms uri=file:///d%3A/dev/flutter_code/harrypet_flutter/docs/notes/Rust%20%E7%BD%91%E7%BB%9C%E5%BA%93%E6%A6%82%E8%A7%88.md
+[Readonly Viewer] round=2 file=8 duration=33ms uri=file:///d%3A/dev/flutter_code/harrypet_flutter/docs/notes/Rust%20%E5%AD%A6%E4%B9%A0%E8%B7%AF%E5%BE%84%E6%80%BB%E8%A7%88.md
+[Readonly Viewer] round=2 file=9 duration=39ms uri=file:///d%3A/dev/flutter_code/harrypet_flutter/docs/README.md
+[Readonly Viewer] round=2 file=10 duration=38ms uri=file:///d%3A/dev/flutter_code/harrypet_flutter/docs/vscode_terminal_stable_config.md
+[Readonly Viewer] round=3 file=1 duration=22ms uri=file:///d%3A/dev/flutter_code/harrypet_flutter/docs/app_release_checklist.md
+[Readonly Viewer] round=3 file=2 duration=23ms uri=file:///d%3A/dev/flutter_code/harrypet_flutter/docs/future_app_architecture/future_app_architecture_discussion.md
+[Readonly Viewer] round=3 file=3 duration=26ms uri=file:///d%3A/dev/flutter_code/harrypet_flutter/docs/future_app_architecture/future_app_architecture_overview.md
+[Readonly Viewer] round=3 file=4 duration=26ms uri=file:///d%3A/dev/flutter_code/harrypet_flutter/docs/future_app_architecture/future_app_architecture_roadmap.md
+[Readonly Viewer] round=3 file=5 duration=28ms uri=file:///d%3A/dev/flutter_code/harrypet_flutter/docs/notes/Rust%20%E9%98%B6%E6%AE%B5%E4%B8%89%EF%BC%9A%E5%AD%A6%E4%B9%A0%E8%B5%84%E6%BA%90%E4%B8%8E%E6%8C%81%E7%BB%AD%E8%B7%9F%E8%BF%9B.md
+[Readonly Viewer] round=3 file=6 duration=31ms uri=file:///d%3A/dev/flutter_code/harrypet_flutter/docs/notes/Rust%20%E9%98%B6%E6%AE%B5%E4%B8%80%EF%BC%9A%E6%89%80%E6%9C%89%E6%9D%83%E5%BF%83%E6%99%BA%E6%A8%A1%E5%9E%8B.md
+[Readonly Viewer] round=3 file=7 duration=23ms uri=file:///d%3A/dev/flutter_code/harrypet_flutter/docs/notes/Rust%20%E7%BD%91%E7%BB%9C%E5%BA%93%E6%A6%82%E8%A7%88.md
+[Readonly Viewer] round=3 file=8 duration=23ms uri=file:///d%3A/dev/flutter_code/harrypet_flutter/docs/notes/Rust%20%E5%AD%A6%E4%B9%A0%E8%B7%AF%E5%BE%84%E6%80%BB%E8%A7%88.md
+[Readonly Viewer] round=3 file=9 duration=26ms uri=file:///d%3A/dev/flutter_code/harrypet_flutter/docs/README.md
+[Readonly Viewer] round=3 file=10 duration=24ms uri=file:///d%3A/dev/flutter_code/harrypet_flutter/docs/vscode_terminal_stable_config.md
+
+开始模式：Baseline (source + openWith preview)
+[Baseline (source + openWith preview)] round=1 file=1 duration=568ms uri=file:///d%3A/dev/flutter_code/harrypet_flutter/docs/app_release_checklist.md
+[Baseline (source + openWith preview)] round=1 file=2 duration=255ms uri=file:///d%3A/dev/flutter_code/harrypet_flutter/docs/future_app_architecture/future_app_architecture_discussion.md
+[Baseline (source + openWith preview)] round=1 file=3 duration=136ms uri=file:///d%3A/dev/flutter_code/harrypet_flutter/docs/future_app_architecture/future_app_architecture_overview.md
+[Baseline (source + openWith preview)] round=1 file=4 duration=117ms uri=file:///d%3A/dev/flutter_code/harrypet_flutter/docs/future_app_architecture/future_app_architecture_roadmap.md
+[Baseline (source + openWith preview)] round=1 file=5 duration=137ms uri=file:///d%3A/dev/flutter_code/harrypet_flutter/docs/notes/Rust%20%E9%98%B6%E6%AE%B5%E4%B8%89%EF%BC%9A%E5%AD%A6%E4%B9%A0%E8%B5%84%E6%BA%90%E4%B8%8E%E6%8C%81%E7%BB%AD%E8%B7%9F%E8%BF%9B.md
+[Baseline (source + openWith preview)] round=1 file=6 duration=99ms uri=file:///d%3A/dev/flutter_code/harrypet_flutter/docs/notes/Rust%20%E9%98%B6%E6%AE%B5%E4%B8%80%EF%BC%9A%E6%89%80%E6%9C%89%E6%9D%83%E5%BF%83%E6%99%BA%E6%A8%A1%E5%9E%8B.md
+[Baseline (source + openWith preview)] round=1 file=7 duration=104ms uri=file:///d%3A/dev/flutter_code/harrypet_flutter/docs/notes/Rust%20%E7%BD%91%E7%BB%9C%E5%BA%93%E6%A6%82%E8%A7%88.md
+[Baseline (source + openWith preview)] round=1 file=8 duration=88ms uri=file:///d%3A/dev/flutter_code/harrypet_flutter/docs/notes/Rust%20%E5%AD%A6%E4%B9%A0%E8%B7%AF%E5%BE%84%E6%80%BB%E8%A7%88.md
+[Baseline (source + openWith preview)] round=1 file=9 duration=122ms uri=file:///d%3A/dev/flutter_code/harrypet_flutter/docs/README.md
+[Baseline (source + openWith preview)] round=1 file=10 duration=98ms uri=file:///d%3A/dev/flutter_code/harrypet_flutter/docs/vscode_terminal_stable_config.md
+[Baseline (source + openWith preview)] round=2 file=1 duration=83ms uri=file:///d%3A/dev/flutter_code/harrypet_flutter/docs/app_release_checklist.md
+[Baseline (source + openWith preview)] round=2 file=2 duration=106ms uri=file:///d%3A/dev/flutter_code/harrypet_flutter/docs/future_app_architecture/future_app_architecture_discussion.md
+[Baseline (source + openWith preview)] round=2 file=3 duration=102ms uri=file:///d%3A/dev/flutter_code/harrypet_flutter/docs/future_app_architecture/future_app_architecture_overview.md
+[Baseline (source + openWith preview)] round=2 file=4 duration=103ms uri=file:///d%3A/dev/flutter_code/harrypet_flutter/docs/future_app_architecture/future_app_architecture_roadmap.md
+[Baseline (source + openWith preview)] round=2 file=5 duration=89ms uri=file:///d%3A/dev/flutter_code/harrypet_flutter/docs/notes/Rust%20%E9%98%B6%E6%AE%B5%E4%B8%89%EF%BC%9A%E5%AD%A6%E4%B9%A0%E8%B5%84%E6%BA%90%E4%B8%8E%E6%8C%81%E7%BB%AD%E8%B7%9F%E8%BF%9B.md
+[Baseline (source + openWith preview)] round=2 file=6 duration=81ms uri=file:///d%3A/dev/flutter_code/harrypet_flutter/docs/notes/Rust%20%E9%98%B6%E6%AE%B5%E4%B8%80%EF%BC%9A%E6%89%80%E6%9C%89%E6%9D%83%E5%BF%83%E6%99%BA%E6%A8%A1%E5%9E%8B.md
+[Baseline (source + openWith preview)] round=2 file=7 duration=91ms uri=file:///d%3A/dev/flutter_code/harrypet_flutter/docs/notes/Rust%20%E7%BD%91%E7%BB%9C%E5%BA%93%E6%A6%82%E8%A7%88.md
+[Baseline (source + openWith preview)] round=2 file=8 duration=85ms uri=file:///d%3A/dev/flutter_code/harrypet_flutter/docs/notes/Rust%20%E5%AD%A6%E4%B9%A0%E8%B7%AF%E5%BE%84%E6%80%BB%E8%A7%88.md
+[Baseline (source + openWith preview)] round=2 file=9 duration=86ms uri=file:///d%3A/dev/flutter_code/harrypet_flutter/docs/README.md
+[Baseline (source + openWith preview)] round=2 file=10 duration=84ms uri=file:///d%3A/dev/flutter_code/harrypet_flutter/docs/vscode_terminal_stable_config.md
+[Baseline (source + openWith preview)] round=3 file=1 duration=86ms uri=file:///d%3A/dev/flutter_code/harrypet_flutter/docs/app_release_checklist.md
+[Baseline (source + openWith preview)] round=3 file=2 duration=103ms uri=file:///d%3A/dev/flutter_code/harrypet_flutter/docs/future_app_architecture/future_app_architecture_discussion.md
+[Baseline (source + openWith preview)] round=3 file=3 duration=101ms uri=file:///d%3A/dev/flutter_code/harrypet_flutter/docs/future_app_architecture/future_app_architecture_overview.md
+[Baseline (source + openWith preview)] round=3 file=4 duration=100ms uri=file:///d%3A/dev/flutter_code/harrypet_flutter/docs/future_app_architecture/future_app_architecture_roadmap.md
+[Baseline (source + openWith preview)] round=3 file=5 duration=94ms uri=file:///d%3A/dev/flutter_code/harrypet_flutter/docs/notes/Rust%20%E9%98%B6%E6%AE%B5%E4%B8%89%EF%BC%9A%E5%AD%A6%E4%B9%A0%E8%B5%84%E6%BA%90%E4%B8%8E%E6%8C%81%E7%BB%AD%E8%B7%9F%E8%BF%9B.md
+[Baseline (source + openWith preview)] round=3 file=6 duration=139ms uri=file:///d%3A/dev/flutter_code/harrypet_flutter/docs/notes/Rust%20%E9%98%B6%E6%AE%B5%E4%B8%80%EF%BC%9A%E6%89%80%E6%9C%89%E6%9D%83%E5%BF%83%E6%99%BA%E6%A8%A1%E5%9E%8B.md
+[Baseline (source + openWith preview)] round=3 file=7 duration=90ms uri=file:///d%3A/dev/flutter_code/harrypet_flutter/docs/notes/Rust%20%E7%BD%91%E7%BB%9C%E5%BA%93%E6%A6%82%E8%A7%88.md
+[Baseline (source + openWith preview)] round=3 file=8 duration=86ms uri=file:///d%3A/dev/flutter_code/harrypet_flutter/docs/notes/Rust%20%E5%AD%A6%E4%B9%A0%E8%B7%AF%E5%BE%84%E6%80%BB%E8%A7%88.md
+[Baseline (source + openWith preview)] round=3 file=9 duration=100ms uri=file:///d%3A/dev/flutter_code/harrypet_flutter/docs/README.md
+[Baseline (source + openWith preview)] round=3 file=10 duration=85ms uri=file:///d%3A/dev/flutter_code/harrypet_flutter/docs/vscode_terminal_stable_config.md
+
+Summary:
+Readonly Viewer | first=132ms | switch p50=29ms | switch p95=39.6ms | samples=30 (29 switch samples)
+Baseline (source + openWith preview) | first=568ms | switch p50=99ms | switch p95=138.2ms | samples=30 (29 switch samples)
+Readonly vs Baseline delta | first=-76.76% | switch p95=-71.35%

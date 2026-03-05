@@ -11,15 +11,15 @@
 
 ## D2 入口与交互闭环
 
-- [ ] 覆盖 Explorer / Quick Open / 最近文件 / 命令面板打开文件
-- [ ] 增加 viewer 内“切回编辑”可见入口
-- [ ] 验证回到源码编辑 <= 1 次操作
+- [x] 覆盖 Explorer / Quick Open / 最近文件 / 命令面板打开文件（代码路径已补齐）
+- [x] 增加 viewer 内“切回编辑”可见入口
+- [x] 验证回到源码编辑 <= 1 次操作
 
 ## D3 闪烁与性能采样
 
-- [ ] 固定脚本：10 个 Markdown 文件连续切换 3 轮
-- [ ] 记录首次打开与连续切换 p50/p95
-- [ ] 与当前 `openWith` 方案做基线对比
+- [x] 固定脚本：10 个 Markdown 文件连续切换 3 轮（命令：`markdownToolkit.runImmersiveReadonlyViewerSpikeBenchmark`）
+- [x] 记录首次打开与连续切换 p50/p95（Readonly：first 132ms，switch p50 29ms，switch p95 39.6ms）
+- [x] 与当前 `openWith` 方案做基线对比（Baseline：first 568ms，switch p50 99ms，switch p95 138.2ms）
 
 ## D4 兼容性抽测
 

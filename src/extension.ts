@@ -5,6 +5,8 @@ const OPEN_FLOATING_PREVIEW_COMMAND = "markdownToolkit.openFloatingPreview";
 const EXIT_PREVIEW_IN_PLACE_COMMAND = "markdownToolkit.exitPreviewInPlace";
 const OPEN_READONLY_VIEWER_COMMAND = "markdownToolkit.openReadonlyViewer";
 const SWITCH_TO_SOURCE_EDITOR_COMMAND = "markdownToolkit.switchToSourceEditor";
+const RUN_SPIKE_BENCHMARK_COMMAND =
+  "markdownToolkit.runImmersiveReadonlyViewerSpikeBenchmark";
 const MARKDOWN_PREVIEW_EDITOR = "vscode.markdown.preview.editor";
 const MARKDOWN_READONLY_VIEWER_EDITOR = "markdownToolkit.markdownReadonlyViewer";
 const IMMERSIVE_PREVIEW_CONTEXT_KEY = "markdownToolkit.immersiveEnabled";
@@ -20,10 +22,14 @@ const PREVIOUS_MARKDOWN_ASSOCIATION_STORAGE_KEY =
 const WORKBENCH_CONFIGURATION_SECTION = "workbench";
 const EDITOR_ASSOCIATIONS_CONFIGURATION_KEY = "editorAssociations";
 const MARKDOWN_FILE_ASSOCIATION_PATTERN = "*.md";
+const READONLY_VIEWER_SWITCH_TO_SOURCE_MESSAGE_TYPE = "switchToSourceEditor";
 const MOVE_ACTIVE_EDITOR_COMMAND = "moveActiveEditor";
 const MOVE_EDITOR_ARGUMENT_BY_GROUP = "group";
 const MOVE_EDITOR_ARGUMENT_TO_POSITION = "position";
 const MAX_DETACHED_PREVIEW_MEMORY = 32;
+const SPIKE_BENCHMARK_FILE_COUNT = 10;
+const SPIKE_BENCHMARK_ROUNDS = 3;
+const SPIKE_BENCHMARK_SWITCH_DELAY_MS = 80;
 
 interface ActiveMarkdownPreview {
   readonly uri: vscode.Uri;
@@ -38,6 +44,24 @@ interface MoveActiveEditorArguments {
 
 interface EditorAssociations {
   [pattern: string]: string;
+}
+
+type SpikeBenchmarkMode = "readonlyViewer" | "baselineOpenWith";
+
+interface SpikeBenchmarkSample {
+  readonly mode: SpikeBenchmarkMode;
+  readonly round: number;
+  readonly fileIndex: number;
+  readonly uri: vscode.Uri;
+  readonly durationMs: number;
+}
+
+interface SpikeBenchmarkResult {
+  readonly mode: SpikeBenchmarkMode;
+  readonly firstOpenMs: number;
+  readonly switchP50Ms: number;
+  readonly switchP95Ms: number;
+  readonly samples: readonly SpikeBenchmarkSample[];
 }
 
 class MarkdownReadonlyDocument implements vscode.CustomDocument {
@@ -63,7 +87,7 @@ class MarkdownReadonlyViewerProvider implements vscode.CustomReadonlyEditorProvi
     _token: vscode.CancellationToken,
   ): Promise<void> {
     webviewPanel.webview.options = {
-      enableScripts: false,
+      enableScripts: true,
     };
     await this.updateReadonlyViewerContent(document.uri, webviewPanel.webview);
 
@@ -81,10 +105,27 @@ class MarkdownReadonlyViewerProvider implements vscode.CustomReadonlyEditorProvi
         }
       },
     );
+    const onDidReceiveMessageDisposable = webviewPanel.webview.onDidReceiveMessage(
+      async (message: unknown) => {
+        if (!isReadonlyViewerSwitchToSourceMessage(message)) {
+          return;
+        }
+
+        try {
+          await openMarkdownSourceEditor(document.uri, webviewPanel.viewColumn);
+        } catch (error) {
+          const reason = error instanceof Error ? error.message : String(error);
+          await vscode.window.showErrorMessage(
+            `切回 Markdown 源码编辑失败: ${reason}`,
+          );
+        }
+      },
+    );
 
     webviewPanel.onDidDispose(() => {
       onDidChangeTextDocumentDisposable.dispose();
       onDidSaveTextDocumentDisposable.dispose();
+      onDidReceiveMessageDisposable.dispose();
     });
   }
 
@@ -108,11 +149,16 @@ class MarkdownReadonlyViewerProvider implements vscode.CustomReadonlyEditorProvi
   private getReadonlyViewerHtml(uri: vscode.Uri, markdownContent: string): string {
     const fileLabel = escapeHtml(vscode.workspace.asRelativePath(uri, false));
     const safeContent = escapeHtml(markdownContent);
+    const nonce = createNonce();
 
     return `<!DOCTYPE html>
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}'"
+    />
     <style>
       body {
         margin: 0;
@@ -121,6 +167,10 @@ class MarkdownReadonlyViewerProvider implements vscode.CustomReadonlyEditorProvi
         font-family: var(--vscode-editor-font-family);
       }
       header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
         position: sticky;
         top: 0;
         z-index: 1;
@@ -129,6 +179,23 @@ class MarkdownReadonlyViewerProvider implements vscode.CustomReadonlyEditorProvi
         background: var(--vscode-editor-background);
         font-size: 12px;
         color: var(--vscode-descriptionForeground);
+      }
+      .header-label {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .switch-button {
+        border: none;
+        border-radius: 4px;
+        padding: 4px 10px;
+        color: var(--vscode-button-foreground);
+        background: var(--vscode-button-background);
+        cursor: pointer;
+        font-size: 12px;
+      }
+      .switch-button:hover {
+        background: var(--vscode-button-hoverBackground);
       }
       pre {
         margin: 0;
@@ -141,8 +208,20 @@ class MarkdownReadonlyViewerProvider implements vscode.CustomReadonlyEditorProvi
     </style>
   </head>
   <body>
-    <header>${fileLabel} · 实验态只读 Viewer</header>
+    <header>
+      <span class="header-label">${fileLabel} · 实验态只读 Viewer</span>
+      <button id="switch-source-button" class="switch-button" type="button">切回源码编辑</button>
+    </header>
     <pre>${safeContent}</pre>
+    <script nonce="${nonce}">
+      const vscodeApi = acquireVsCodeApi();
+      const switchButton = document.getElementById("switch-source-button");
+      if (switchButton) {
+        switchButton.addEventListener("click", () => {
+          vscodeApi.postMessage({ type: "${READONLY_VIEWER_SWITCH_TO_SOURCE_MESSAGE_TYPE}" });
+        });
+      }
+    </script>
   </body>
 </html>`;
   }
@@ -158,6 +237,105 @@ function escapeHtml(value: string): string {
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
+}
+
+function isReadonlyViewerSwitchToSourceMessage(message: unknown): boolean {
+  if (!message || typeof message !== "object") {
+    return false;
+  }
+
+  const candidateMessage = message as { readonly type?: unknown };
+  return (
+    candidateMessage.type === READONLY_VIEWER_SWITCH_TO_SOURCE_MESSAGE_TYPE
+  );
+}
+
+function createNonce(length = 16): string {
+  const charset =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let nonce = "";
+  for (let index = 0; index < length; index += 1) {
+    const randomIndex = Math.floor(Math.random() * charset.length);
+    nonce += charset.charAt(randomIndex);
+  }
+
+  return nonce;
+}
+
+function delay(milliseconds: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, milliseconds);
+  });
+}
+
+function roundToTwoDecimals(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
+function calculatePercentile(values: readonly number[], percentile: number): number {
+  if (values.length === 0) {
+    return 0;
+  }
+
+  const sortedValues = [...values].sort((left, right) => left - right);
+  const percentileIndex = (sortedValues.length - 1) * percentile;
+  const lowerIndex = Math.floor(percentileIndex);
+  const upperIndex = Math.ceil(percentileIndex);
+
+  if (lowerIndex === upperIndex) {
+    return sortedValues[lowerIndex];
+  }
+
+  const upperWeight = percentileIndex - lowerIndex;
+  const lowerWeight = 1 - upperWeight;
+  return (
+    sortedValues[lowerIndex] * lowerWeight +
+    sortedValues[upperIndex] * upperWeight
+  );
+}
+
+function getSpikeBenchmarkModeLabel(mode: SpikeBenchmarkMode): string {
+  return mode === "readonlyViewer"
+    ? "Readonly Viewer"
+    : "Baseline (source + openWith preview)";
+}
+
+function getSpikeBenchmarkSummaryLine(result: SpikeBenchmarkResult): string {
+  const switchSampleCount = Math.max(result.samples.length - 1, 0);
+  return `${getSpikeBenchmarkModeLabel(result.mode)} | first=${roundToTwoDecimals(
+    result.firstOpenMs,
+  )}ms | switch p50=${roundToTwoDecimals(
+    result.switchP50Ms,
+  )}ms | switch p95=${roundToTwoDecimals(
+    result.switchP95Ms,
+  )}ms | samples=${result.samples.length} (${switchSampleCount} switch samples)`;
+}
+
+function getDeltaPercent(current: number, baseline: number): number {
+  if (baseline === 0) {
+    return 0;
+  }
+
+  return ((current - baseline) / baseline) * 100;
+}
+
+async function collectMarkdownUrisForSpikeBenchmark(): Promise<vscode.Uri[] | undefined> {
+  const markdownUris = await vscode.workspace.findFiles(
+    "**/*.md",
+    "**/{node_modules,.git,out}/**",
+    SPIKE_BENCHMARK_FILE_COUNT,
+  );
+  if (markdownUris.length < SPIKE_BENCHMARK_FILE_COUNT) {
+    await vscode.window.showWarningMessage(
+      `需要至少 ${SPIKE_BENCHMARK_FILE_COUNT} 个 Markdown 文件，当前仅找到 ${markdownUris.length} 个。`,
+    );
+    return undefined;
+  }
+
+  return markdownUris
+    .slice()
+    .sort((left, right) => left.fsPath.localeCompare(right.fsPath))
+    .slice(0, SPIKE_BENCHMARK_FILE_COUNT);
 }
 
 function getActiveMarkdownEditor(): vscode.TextEditor | undefined {
@@ -314,12 +492,153 @@ async function openMarkdownSourceEditor(
   });
 }
 
+async function runSpikeBenchmarkMode(
+  mode: SpikeBenchmarkMode,
+  markdownUris: readonly vscode.Uri[],
+  outputChannel: vscode.OutputChannel,
+): Promise<SpikeBenchmarkResult> {
+  const viewColumn = vscode.window.activeTextEditor?.viewColumn ?? vscode.ViewColumn.One;
+  const samples: SpikeBenchmarkSample[] = [];
+  outputChannel.appendLine(`开始模式：${getSpikeBenchmarkModeLabel(mode)}`);
+
+  for (let round = 1; round <= SPIKE_BENCHMARK_ROUNDS; round += 1) {
+    for (let fileIndex = 0; fileIndex < markdownUris.length; fileIndex += 1) {
+      const uri = markdownUris[fileIndex];
+      const startedAt = Date.now();
+
+      if (mode === "readonlyViewer") {
+        await vscode.commands.executeCommand(
+          "vscode.openWith",
+          uri,
+          MARKDOWN_READONLY_VIEWER_EDITOR,
+          {
+            viewColumn,
+            preview: true,
+            preserveFocus: false,
+          },
+        );
+      } else {
+        await openMarkdownSourceEditor(uri, viewColumn);
+        await openMarkdownPreview(uri, viewColumn);
+      }
+
+      const durationMs = Date.now() - startedAt;
+      samples.push({
+        mode,
+        round,
+        fileIndex: fileIndex + 1,
+        uri,
+        durationMs,
+      });
+      outputChannel.appendLine(
+        `[${getSpikeBenchmarkModeLabel(mode)}] round=${round} file=${fileIndex + 1} duration=${durationMs}ms uri=${uri.toString()}`,
+      );
+      await delay(SPIKE_BENCHMARK_SWITCH_DELAY_MS);
+    }
+  }
+
+  const firstOpenMs = samples[0]?.durationMs ?? 0;
+  const switchDurations = samples.slice(1).map((sample) => sample.durationMs);
+
+  return {
+    mode,
+    firstOpenMs,
+    switchP50Ms: calculatePercentile(switchDurations, 0.5),
+    switchP95Ms: calculatePercentile(switchDurations, 0.95),
+    samples,
+  };
+}
+
+async function runImmersiveReadonlyViewerSpikeBenchmark(): Promise<void> {
+  if (!readonlyViewerExperimentEnabled) {
+    await vscode.window.showInformationMessage(
+      "请先启用 markdownToolkit.experimental.immersiveReadonlyViewer 再执行 D3 benchmark。",
+    );
+    return;
+  }
+
+  const markdownUris = await collectMarkdownUrisForSpikeBenchmark();
+  if (!markdownUris) {
+    return;
+  }
+
+  const outputChannel = vscode.window.createOutputChannel(
+    "Markdown Toolkit Spike Benchmark",
+  );
+  outputChannel.clear();
+  outputChannel.show(true);
+  outputChannel.appendLine(
+    `D3 benchmark started at ${new Date().toISOString()} (${SPIKE_BENCHMARK_FILE_COUNT} files x ${SPIKE_BENCHMARK_ROUNDS} rounds)`,
+  );
+  outputChannel.appendLine("Files:");
+  for (const uri of markdownUris) {
+    outputChannel.appendLine(`- ${uri.toString()}`);
+  }
+  outputChannel.appendLine("");
+
+  try {
+    const readonlyViewerResult = await runSpikeBenchmarkMode(
+      "readonlyViewer",
+      markdownUris,
+      outputChannel,
+    );
+    outputChannel.appendLine("");
+    const baselineResult = await runSpikeBenchmarkMode(
+      "baselineOpenWith",
+      markdownUris,
+      outputChannel,
+    );
+
+    const firstOpenDelta = getDeltaPercent(
+      readonlyViewerResult.firstOpenMs,
+      baselineResult.firstOpenMs,
+    );
+    const switchP95Delta = getDeltaPercent(
+      readonlyViewerResult.switchP95Ms,
+      baselineResult.switchP95Ms,
+    );
+
+    outputChannel.appendLine("");
+    outputChannel.appendLine("Summary:");
+    outputChannel.appendLine(getSpikeBenchmarkSummaryLine(readonlyViewerResult));
+    outputChannel.appendLine(getSpikeBenchmarkSummaryLine(baselineResult));
+    outputChannel.appendLine(
+      `Readonly vs Baseline delta | first=${roundToTwoDecimals(firstOpenDelta)}% | switch p95=${roundToTwoDecimals(switchP95Delta)}%`,
+    );
+
+    await vscode.window.showInformationMessage(
+      "D3 benchmark 已完成，详情请查看 Output: Markdown Toolkit Spike Benchmark。",
+    );
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    await vscode.window.showErrorMessage(`执行 D3 benchmark 失败: ${reason}`);
+  }
+}
+
 function isMarkdownFile(uri: vscode.Uri | undefined): uri is vscode.Uri {
   if (!uri) {
     return false;
   }
 
   return uri.path.toLowerCase().endsWith(".md");
+}
+
+async function pickMarkdownFileForReadonlyViewer(): Promise<vscode.Uri | undefined> {
+  const pickedFileUris = await vscode.window.showOpenDialog({
+    canSelectFiles: true,
+    canSelectFolders: false,
+    canSelectMany: false,
+    filters: {
+      Markdown: ["md"],
+    },
+    openLabel: "在只读 Viewer 中打开",
+  });
+
+  if (!pickedFileUris || pickedFileUris.length === 0) {
+    return undefined;
+  }
+
+  return pickedFileUris[0];
 }
 
 async function openMarkdownReadonlyViewer(
@@ -333,11 +652,18 @@ async function openMarkdownReadonlyViewer(
   }
 
   const editor = getActiveMarkdownEditor();
-  const targetUri = isMarkdownFile(resourceUri) ? resourceUri : editor?.document.uri;
+  const targetUriFromResource = isMarkdownFile(resourceUri) ? resourceUri : undefined;
+  const targetUriFromEditor = isMarkdownFile(editor?.document.uri)
+    ? editor.document.uri
+    : undefined;
+  const targetUri =
+    targetUriFromResource ??
+    targetUriFromEditor ??
+    (await pickMarkdownFileForReadonlyViewer());
   if (!targetUri) {
-    await vscode.window.showWarningMessage("请先选择或打开一个 Markdown 文件。");
     return;
   }
+  const targetViewColumn = editor?.viewColumn ?? vscode.window.activeTextEditor?.viewColumn;
 
   try {
     await vscode.commands.executeCommand(
@@ -345,7 +671,7 @@ async function openMarkdownReadonlyViewer(
       targetUri,
       MARKDOWN_READONLY_VIEWER_EDITOR,
       {
-        viewColumn: editor?.viewColumn,
+        viewColumn: targetViewColumn,
         preview: true,
         preserveFocus: false,
       },
@@ -641,6 +967,10 @@ export function activate(context: vscode.ExtensionContext): void {
     SWITCH_TO_SOURCE_EDITOR_COMMAND,
     switchToSourceEditor,
   );
+  const runSpikeBenchmarkDisposable = vscode.commands.registerCommand(
+    RUN_SPIKE_BENCHMARK_COMMAND,
+    runImmersiveReadonlyViewerSpikeBenchmark,
+  );
   const activeEditorChangeDisposable = vscode.window.onDidChangeActiveTextEditor(
     (editor) => {
       void handleActiveTextEditorChanged(editor);
@@ -672,6 +1002,7 @@ export function activate(context: vscode.ExtensionContext): void {
     exitDisposable,
     openReadonlyViewerDisposable,
     switchToSourceEditorDisposable,
+    runSpikeBenchmarkDisposable,
     activeEditorChangeDisposable,
     configurationChangeDisposable,
   );

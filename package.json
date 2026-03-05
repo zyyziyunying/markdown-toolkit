@@ -53,7 +53,7 @@
         "title": "Open Markdown Readonly Viewer (Experimental)",
         "shortTitle": "Readonly Viewer",
         "category": "Markdown Toolkit",
-        "enablement": "markdownToolkit.experimentalReadonlyViewerEnabled && (resourceLangId == markdown || resourceExtname == .md) && activeCustomEditorId != markdownToolkit.markdownReadonlyViewer",
+        "enablement": "config.markdownToolkit.experimental.immersiveReadonlyViewer",
         "icon": "$(preview)"
       },
       {
@@ -63,6 +63,14 @@
         "category": "Markdown Toolkit",
         "enablement": "activeCustomEditorId == markdownToolkit.markdownReadonlyViewer",
         "icon": "$(edit)"
+      },
+      {
+        "command": "markdownToolkit.runImmersiveReadonlyViewerSpikeBenchmark",
+        "title": "Run Immersive Readonly Viewer Spike Benchmark (Experimental)",
+        "shortTitle": "Run Spike Benchmark",
+        "category": "Markdown Toolkit",
+        "enablement": "config.markdownToolkit.experimental.immersiveReadonlyViewer",
+        "icon": "$(pulse)"
       }
     ],
     "menus": {
@@ -85,7 +93,7 @@
         {
           "command": "markdownToolkit.openReadonlyViewer",
           "group": "navigation@10.2",
-          "when": "markdownToolkit.experimentalReadonlyViewerEnabled && resourceLangId == markdown && activeCustomEditorId != markdownToolkit.markdownReadonlyViewer"
+          "when": "config.markdownToolkit.experimental.immersiveReadonlyViewer && resourceLangId == markdown && activeCustomEditorId != markdownToolkit.markdownReadonlyViewer"
         },
         {
           "command": "markdownToolkit.switchToSourceEditor",
@@ -112,7 +120,7 @@
         {
           "command": "markdownToolkit.openReadonlyViewer",
           "group": "navigation@10.2",
-          "when": "markdownToolkit.experimentalReadonlyViewerEnabled && resourceLangId == markdown && activeCustomEditorId != markdownToolkit.markdownReadonlyViewer"
+          "when": "config.markdownToolkit.experimental.immersiveReadonlyViewer && resourceLangId == markdown && activeCustomEditorId != markdownToolkit.markdownReadonlyViewer"
         },
         {
           "command": "markdownToolkit.switchToSourceEditor",
@@ -141,7 +149,7 @@
         {
           "command": "markdownToolkit.openReadonlyViewer",
           "group": "navigation@10.2",
-          "when": "markdownToolkit.experimentalReadonlyViewerEnabled && resourceExtname == .md"
+          "when": "config.markdownToolkit.experimental.immersiveReadonlyViewer && resourceExtname == .md"
         }
       ],
       "commandPalette": [
@@ -159,11 +167,15 @@
         },
         {
           "command": "markdownToolkit.openReadonlyViewer",
-          "when": "markdownToolkit.experimentalReadonlyViewerEnabled && (resourceLangId == markdown || resourceExtname == .md) && activeCustomEditorId != markdownToolkit.markdownReadonlyViewer"
+          "when": "config.markdownToolkit.experimental.immersiveReadonlyViewer"
         },
         {
           "command": "markdownToolkit.switchToSourceEditor",
           "when": "activeCustomEditorId == markdownToolkit.markdownReadonlyViewer"
+        },
+        {
+          "command": "markdownToolkit.runImmersiveReadonlyViewerSpikeBenchmark",
+          "when": "config.markdownToolkit.experimental.immersiveReadonlyViewer"
         }
       ]
     },
